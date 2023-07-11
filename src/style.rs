@@ -391,7 +391,7 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
             };
         }
 
-        if !cfg!(feature = "nested-formats") || self.is_complete() {
+        if self.is_complete() {
             return Style::fmt_clear_all(f);
         }
 

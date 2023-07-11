@@ -7,6 +7,5 @@ edition = "2021"
 
 [features]
 
-nested-formats = []
-
 [dependencies]
+owo-colors = '3'

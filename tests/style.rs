@@ -38,11 +38,7 @@ fn test_partial() {
         background.clear()
     );
 
-    if cfg!(feature = "nested-formats") {
-        assert_eq!(x, "\x1b[41mhello \x1b[34mmy\x1b[39m world\x1b[49m")
-    } else {
-        assert_eq!(x, "\x1b[41mhello \x1b[34mmy\x1b[0m world\x1b[0m")
-    }
+    assert_eq!(x, "\x1b[41mhello \x1b[34mmy\x1b[39m world\x1b[49m")
 }
 
 #[test]
