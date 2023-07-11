@@ -46,6 +46,14 @@ macro_rules! AnsiColorMethods {
             $(fn $into_on_fun(self) -> StyledValue<Self, crate::NoColor, ansi::$color> where Self: Sized {
                 self.into_style().$on_fun()
             })*
+
+            $(fn $effect_fun(&self) -> StyledValue<&Self> {
+                self.style().$effect_fun()
+            })*
+
+            $(fn $into_effect_fun(self) -> StyledValue<Self> where Self: Sized {
+                self.into_style().$effect_fun()
+            })*
         }
 
         impl<T, F, B> StyledValue<T, F, B> {
@@ -111,6 +119,8 @@ AnsiColorMethods! {
         Hidden hide into_hide
         Strikethrough strikethrough into_strikethrough
         Overline overline into_overline
+        SuperScript superscript into_superscript
+        SubScript subscript into_subscript
     )
 }
 

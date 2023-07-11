@@ -338,6 +338,8 @@ Effect! {
     Hidden 8 28 -> hide,
     Strikethrough 9 29 -> strikethrough,
     Overline 53 55 -> overline,
+    SuperScript 73 75 -> superscript,
+    SubScript 73 75 -> subscript,
 }
 
 impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
