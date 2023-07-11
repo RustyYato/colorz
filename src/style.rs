@@ -327,10 +327,11 @@ impl<F: Copy, B: Copy> Style<F, B> {
 }
 
 Effect! {
-    Bold 1 21 -> bold,
-    Dimmed 2 21 -> dimmed,
+    Bold 1 22 -> bold,
+    Dimmed 2 22 -> dimmed,
     Italic 3 23 -> italics,
     Underline 4 24 -> underlined,
+    DoubleUnderline 21 24 -> double_underlined,
     Blink 5 25 -> blink,
     BlinkFast 6 25 -> blink_fast,
     Reversed 7 27 -> reversed,

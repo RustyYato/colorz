@@ -104,6 +104,7 @@ AnsiColorMethods! {
         Dimmed dimmed into_dimmed
         Italic italics into_italics
         Underline underlined into_underlined
+        DoubleUnderline double_underlined into_double_underlined
         Blink blink into_blink
         BlinkFast blink_fast into_blink_fast
         Reversed reversed into_reversed
