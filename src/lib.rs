@@ -6,7 +6,16 @@ pub mod css;
 pub mod mode;
 pub mod rgb;
 mod style;
+mod value;
 pub mod xterm;
+
+pub struct StyledValue<T, F = NoColor, B = NoColor> {
+    value: T,
+    style: Style<F, B>,
+}
+
+impl<T: ?Sized> Colorize for T {}
+pub use value::Colorize;
 
 pub use style::{Effect, EffectFlags, Style};
 
@@ -149,5 +158,16 @@ impl OptionalColor for NoColor {
     #[inline]
     fn get(&self) -> Option<Self::Color> {
         None
+    }
+}
+
+struct Ref<'a, T: ?Sized>(&'a T);
+
+impl<T: ?Sized + OptionalColor> OptionalColor for Ref<'_, T> {
+    type Color = T::Color;
+
+    #[inline]
+    fn get(&self) -> Option<Self::Color> {
+        self.0.get()
     }
 }

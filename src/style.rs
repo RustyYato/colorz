@@ -71,9 +71,9 @@ macro_rules! Effect {
             }
         }
 
-        impl<F: Copy, B: Copy> Style<F, B> {$(
+        impl<F, B> Style<F, B> {$(
             #[inline(always)]
-            pub const fn $set_func(self) -> Self {
+            pub fn $set_func(self) -> Self {
                 self.with(Effect::$name)
             }
         )*}
@@ -158,9 +158,9 @@ impl Style<crate::NoColor, crate::NoColor> {
     }
 }
 
-impl<F: Copy, B: Copy> Style<F, B> {
+impl<F, B> Style<F, B> {
     #[inline(always)]
-    pub const fn foreground<T>(self, color: T) -> Style<T, B> {
+    pub fn foreground<T>(self, color: T) -> Style<T, B> {
         Style {
             foreground: color,
             background: self.background,
@@ -169,7 +169,36 @@ impl<F: Copy, B: Copy> Style<F, B> {
     }
 
     #[inline(always)]
-    pub const fn background<T>(self, color: T) -> Style<F, T> {
+    pub fn background<T>(self, color: T) -> Style<F, T> {
+        Style {
+            foreground: self.foreground,
+            background: color,
+            effects: self.effects,
+        }
+    }
+
+    #[inline(always)]
+    pub(crate) fn as_ref(&self) -> Style<crate::Ref<F>, crate::Ref<B>> {
+        Style {
+            foreground: crate::Ref(&self.foreground),
+            background: crate::Ref(&self.background),
+            effects: self.effects,
+        }
+    }
+}
+
+impl<F: Copy, B: Copy> Style<F, B> {
+    #[inline(always)]
+    pub const fn const_foreground<T>(self, color: T) -> Style<T, B> {
+        Style {
+            foreground: color,
+            background: self.background,
+            effects: self.effects,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn const_background<T>(self, color: T) -> Style<F, T> {
         Style {
             foreground: self.foreground,
             background: color,
@@ -192,9 +221,14 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
             && self.foreground.get().is_some()
             && self.background.get().is_some()
     }
+
+    #[inline(always)]
+    pub const fn is(&self, opt: Effect) -> bool {
+        self.effects.is(opt)
+    }
 }
 
-impl<F: Copy, B: Copy> Style<F, B> {
+impl<F, B> Style<F, B> {
     #[inline(always)]
     pub fn effects<I: IntoIterator>(self, flags: I) -> Self
     where
@@ -207,7 +241,43 @@ impl<F: Copy, B: Copy> Style<F, B> {
     }
 
     #[inline(always)]
-    pub const fn with_effects(self, effects: EffectFlags) -> Self {
+    pub fn with_effects(self, effects: EffectFlags) -> Self {
+        Style { effects, ..self }
+    }
+
+    #[inline(always)]
+    pub fn clear_effects(self) -> Self {
+        self.with_effects(EffectFlags::new())
+    }
+
+    #[inline(always)]
+    pub fn with(self, opt: Effect) -> Self {
+        Style {
+            effects: self.effects.with(opt),
+            ..self
+        }
+    }
+
+    #[inline(always)]
+    pub fn without(self, opt: Effect) -> Self {
+        Style {
+            effects: self.effects.without(opt),
+            ..self
+        }
+    }
+
+    #[inline(always)]
+    pub fn toggled(self, opt: Effect) -> Self {
+        Style {
+            effects: self.effects.toggled(opt),
+            ..self
+        }
+    }
+}
+
+impl<F: Copy, B: Copy> Style<F, B> {
+    #[inline(always)]
+    pub const fn const_with_effects(self, effects: EffectFlags) -> Self {
         Style {
             foreground: self.foreground,
             background: self.background,
@@ -216,28 +286,23 @@ impl<F: Copy, B: Copy> Style<F, B> {
     }
 
     #[inline(always)]
-    pub const fn clear_effects(self) -> Self {
-        self.with_effects(EffectFlags::new())
+    pub const fn const_clear_effects(self) -> Self {
+        self.const_with_effects(EffectFlags::new())
     }
 
     #[inline(always)]
-    pub const fn with(self, opt: Effect) -> Self {
-        self.with_effects(self.effects.with(opt))
+    pub const fn const_with(self, opt: Effect) -> Self {
+        self.const_with_effects(self.effects.with(opt))
     }
 
     #[inline(always)]
-    pub const fn without(self, opt: Effect) -> Self {
-        self.with_effects(self.effects.without(opt))
+    pub const fn const_without(self, opt: Effect) -> Self {
+        self.const_with_effects(self.effects.without(opt))
     }
 
     #[inline(always)]
-    pub const fn toggled(self, opt: Effect) -> Self {
-        self.with_effects(self.effects.toggled(opt))
-    }
-
-    #[inline(always)]
-    pub const fn is(&self, opt: Effect) -> bool {
-        self.effects.is(opt)
+    pub const fn const_toggled(self, opt: Effect) -> Self {
+        self.const_with_effects(self.effects.toggled(opt))
     }
 }
 
