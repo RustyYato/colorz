@@ -9,31 +9,37 @@ macro_rules! AnsiColor {
             $($name,)*
         }
 
+        const _: [(); core::mem::size_of::<AnsiColor>()] = [(); 1];
+
         $(
             #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
             pub struct $name;
         )*
 
         impl AnsiColor {
-            pub const fn foreground_code(&self) -> &'static str {
+            #[inline]
+            pub const fn foreground_code(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_CODE,)*
                 }
             }
 
-            pub const fn background_code(&self) -> &'static str {
+            #[inline]
+            pub const fn background_code(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::BACKGROUND_CODE,)*
                 }
             }
 
-            pub const fn foreground_escape(&self) -> &'static str {
+            #[inline]
+            pub const fn foreground_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_ESCAPE,)*
                 }
             }
 
-            pub const fn background_escape(&self) -> &'static str {
+            #[inline]
+            pub const fn background_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::BACKGROUND_ESCAPE,)*
                 }
@@ -50,22 +56,22 @@ macro_rules! AnsiColor {
 
             #[inline]
             fn foreground_code(&self) -> &'static str {
-                self.foreground_code()
+                (*self).foreground_code()
             }
 
             #[inline]
             fn background_code(&self) -> &'static str {
-                self.background_code()
+                (*self).background_code()
             }
 
             #[inline]
             fn foreground_escape(&self) -> &'static str {
-                self.foreground_escape()
+                (*self).foreground_escape()
             }
 
             #[inline]
             fn background_escape(&self) -> &'static str {
-                self.background_escape()
+                (*self).background_escape()
             }
         }
 

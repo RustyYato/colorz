@@ -8,6 +8,8 @@ macro_rules! Css {
             $($name,)*
         }
 
+        const _: [(); core::mem::size_of::<CssColor>()] = [(); 1];
+
         $(
             #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
             pub struct $name;
