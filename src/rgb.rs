@@ -68,6 +68,7 @@ const fn to_str(x: &[u8]) -> &str {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RGB<const RED: u8, const GREEN: u8, const BLUE: u8>;
 
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> RGB<RED, GREEN, BLUE> {
@@ -77,8 +78,8 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> RGB<RED, GREEN, BLUE> {
         blue: BLUE,
     };
 
-    const FOREGROUND_CODE_DATA: [u8; 16] = code(3, RED, GREEN, BLUE);
-    const BACKGROUND_CODE_DATA: [u8; 16] = code(4, RED, GREEN, BLUE);
+    const FOREGROUND_CODE_DATA: [u8; 16] = code(b'3', RED, GREEN, BLUE);
+    const BACKGROUND_CODE_DATA: [u8; 16] = code(b'4', RED, GREEN, BLUE);
 
     pub const FOREGROUND_CODE: &'static str = to_str(&Self::FOREGROUND_CODE_DATA);
     pub const BACKGROUND_CODE: &'static str = to_str(&Self::BACKGROUND_CODE_DATA);

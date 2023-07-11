@@ -56,7 +56,14 @@ fn test_rgb() {
         }))
         .dimmed();
 
-    println!("{}hello{}", style.apply(), style.clear());
+    assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;0;2m");
+}
 
-    assert_eq!(format!("{}", style.apply()), "\x1b[44;2m");
+#[test]
+fn test_rgb_const() {
+    let style = Style::new()
+        .background(colorize::rgb::RGB::<255, 128, 0>)
+        .dimmed();
+
+    assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;000;2m");
 }
