@@ -10,7 +10,7 @@ impl<T, F, B> StyledValue<T, F, B> {
 
 macro_rules! AnsiColorMethods {
     (
-        ($($color:ident $fun:ident $into_fun:ident)*)
+        ($($color:ident $fun:ident $into_fun:ident $on_fun:ident $into_on_fun:ident)*)
         ($($effect:ident $effect_fun:ident $into_effect_fun:ident)*)
     ) => {
         pub trait Colorize {
@@ -35,8 +35,16 @@ macro_rules! AnsiColorMethods {
                 self.style().$fun()
             })*
 
+            $(fn $on_fun(&self) -> StyledValue<&Self, crate::NoColor, ansi::$color> {
+                self.style().$on_fun()
+            })*
+
             $(fn $into_fun(self) -> StyledValue<Self, ansi::$color> where Self: Sized{
                 self.into_style().$fun()
+            })*
+
+            $(fn $into_on_fun(self) -> StyledValue<Self, crate::NoColor, ansi::$color> where Self: Sized {
+                self.into_style().$on_fun()
             })*
         }
 
@@ -45,6 +53,13 @@ macro_rules! AnsiColorMethods {
                 StyledValue {
                     value: self.value,
                     style: self.style.foreground(ansi::$color),
+                }
+            })*
+
+            $(pub fn $on_fun(self) -> StyledValue<T, F, ansi::$color> {
+                StyledValue {
+                    value: self.value,
+                    style: self.style.background(ansi::$color),
                 }
             })*
 
@@ -61,29 +76,28 @@ macro_rules! AnsiColorMethods {
                 $(Effect::$effect => (),)*
             }
         }
-
     };
 }
 
 AnsiColorMethods! {
     (
-        Black   black into_black
-        Red     red into_red
-        Green   green into_green
-        Yellow  yellow into_yellow
-        Blue    blue into_blue
-        Magenta magenta into_magenta
-        Cyan    cyan into_cyan
-        White   white into_white
+        Black   black into_black on_black into_on_black
+        Red     red into_red on_red into_on_red
+        Green   green into_green on_green into_on_green
+        Yellow  yellow into_yellow on_yellow into_on_yellow
+        Blue    blue into_blue on_blue into_on_blue
+        Magenta magenta into_magenta on_magenta into_on_magenta
+        Cyan    cyan into_cyan on_cyan into_on_cyan
+        White   white into_white on_white into_on_white
 
-        BrightBlack   bright_black into_bright_black
-        BrightRed     bright_red into_bright_red
-        BrightGreen   bright_green into_bright_green
-        BrightYellow  bright_yellow into_bright_yellow
-        BrightBlue    bright_blue into_bright_blue
-        BrightMagenta bright_magenta into_bright_magenta
-        BrightCyan    bright_cyan into_bright_cyan
-        BrightWhite   bright_white into_bright_white
+        BrightBlack   bright_black into_bright_black on_bright_black into_on_bright_black
+        BrightRed     bright_red into_bright_red on_bright_red into_on_bright_red
+        BrightGreen   bright_green into_bright_green on_bright_green into_on_bright_green
+        BrightYellow  bright_yellow into_bright_yellow on_bright_yellow into_on_bright_yellow
+        BrightBlue    bright_blue into_bright_blue on_bright_blue into_on_bright_blue
+        BrightMagenta bright_magenta into_bright_magenta on_bright_magenta into_on_bright_magenta
+        BrightCyan    bright_cyan into_bright_cyan on_bright_cyan into_on_bright_cyan
+        BrightWhite   bright_white into_bright_white on_bright_white into_on_bright_white
     )
     (
         Bold bold into_bold
