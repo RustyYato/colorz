@@ -156,6 +156,26 @@ impl Style<crate::NoColor, crate::NoColor> {
     fn fmt_clear_all(f: &mut fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[0m")
     }
+
+    pub fn clear_all() -> impl core::fmt::Display + core::fmt::Debug {
+        struct ClearAll;
+
+        impl core::fmt::Display for ClearAll {
+            #[inline]
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                Style::fmt_clear_all(f)
+            }
+        }
+
+        impl core::fmt::Debug for ClearAll {
+            #[inline]
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                Style::fmt_clear_all(f)
+            }
+        }
+
+        ClearAll
+    }
 }
 
 impl<F, B> Style<F, B> {
@@ -442,26 +462,6 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
         }
 
         Suffix { style: self }
-    }
-
-    pub fn clear_all() -> impl core::fmt::Display + core::fmt::Debug {
-        struct ClearAll;
-
-        impl core::fmt::Display for ClearAll {
-            #[inline]
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                Style::fmt_clear_all(f)
-            }
-        }
-
-        impl core::fmt::Debug for ClearAll {
-            #[inline]
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                Style::fmt_clear_all(f)
-            }
-        }
-
-        ClearAll
     }
 }
 
