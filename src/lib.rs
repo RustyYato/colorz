@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 pub mod ansi;
+pub mod css;
 pub mod mode;
 pub mod rgb;
 mod style;
@@ -15,6 +16,7 @@ pub struct NoColor;
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color {
     Ansi(ansi::AnsiColor),
+    Css(css::CssColor),
     Xterm(xterm::XtermColor),
     Rgb(rgb::Rgb),
 }
@@ -73,6 +75,7 @@ impl WriteColor for Color {
     fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_foreground_code(f),
+            Color::Css(color) => color.fmt_foreground_code(f),
             Color::Xterm(color) => color.fmt_foreground_code(f),
             Color::Rgb(color) => color.fmt_background_code(f),
         }
@@ -81,6 +84,7 @@ impl WriteColor for Color {
     fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_background_code(f),
+            Color::Css(color) => color.fmt_background(f),
             Color::Xterm(color) => color.fmt_background_code(f),
             Color::Rgb(color) => color.fmt_background_code(f),
         }
@@ -89,6 +93,7 @@ impl WriteColor for Color {
     fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_foreground(f),
+            Color::Css(color) => color.fmt_foreground(f),
             Color::Xterm(color) => color.fmt_foreground(f),
             Color::Rgb(color) => color.fmt_foreground(f),
         }
@@ -97,6 +102,7 @@ impl WriteColor for Color {
     fn fmt_background(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_background(f),
+            Color::Css(color) => color.fmt_background(f),
             Color::Xterm(color) => color.fmt_background(f),
             Color::Rgb(color) => color.fmt_background(f),
         }
