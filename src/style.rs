@@ -1,12 +1,12 @@
 use core::{fmt, num::NonZeroU16};
 
-use crate::{ansi, Color, WriteColor};
+use crate::{ansi, Color, OptionalColor, WriteColor};
 
 #[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Style {
-    pub foreground: Option<Color>,
-    pub background: Option<Color>,
+pub struct Style<F = Option<Color>, B = Option<Color>> {
+    pub foreground: F,
+    pub background: B,
     pub effects: EffectFlags,
 }
 
@@ -71,7 +71,7 @@ macro_rules! Effect {
             }
         }
 
-        impl Style {$(
+        impl<F: Copy, B: Copy> Style<F, B> {$(
             #[inline(always)]
             pub const fn $set_func(self) -> Self {
                 self.with(Effect::$name)
@@ -143,42 +143,58 @@ impl EffectFlags {
     }
 }
 
-impl Style {
+impl Style<crate::NoColor, crate::NoColor> {
     #[inline(always)]
     pub const fn new() -> Self {
         Self {
-            foreground: None,
-            background: None,
+            foreground: crate::NoColor,
+            background: crate::NoColor,
             effects: EffectFlags::new(),
         }
     }
 
+    fn fmt_clear_all(f: &mut fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("\x1b[0m")
+    }
+}
+
+impl<F: Copy, B: Copy> Style<F, B> {
+    #[inline(always)]
+    pub const fn foreground<T>(self, color: T) -> Style<T, B> {
+        Style {
+            foreground: color,
+            background: self.background,
+            effects: self.effects,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn background<T>(self, color: T) -> Style<F, T> {
+        Style {
+            foreground: self.foreground,
+            background: color,
+            effects: self.effects,
+        }
+    }
+}
+
+impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     #[inline(always)]
     pub fn is_plain(&self) -> bool {
-        self.effects.is_plain() && self.foreground.is_none() && self.background.is_none()
+        self.effects.is_plain()
+            && self.foreground.get().is_none()
+            && self.background.get().is_none()
     }
 
     #[inline(always)]
     pub fn is_complete(&self) -> bool {
-        self.effects == EffectFlags::all() && self.foreground.is_some() && self.background.is_some()
+        self.effects == EffectFlags::all()
+            && self.foreground.get().is_some()
+            && self.background.get().is_some()
     }
+}
 
-    #[inline(always)]
-    pub const fn foreground(self, color: Color) -> Self {
-        Self {
-            foreground: Some(color),
-            ..self
-        }
-    }
-
-    #[inline(always)]
-    pub const fn background(self, color: Color) -> Self {
-        Self {
-            background: Some(color),
-            ..self
-        }
-    }
-
+impl<F: Copy, B: Copy> Style<F, B> {
     #[inline(always)]
     pub fn effects<I: IntoIterator>(self, flags: I) -> Self
     where
@@ -191,10 +207,11 @@ impl Style {
     }
 
     #[inline(always)]
-    pub const fn with_effects(self, flags: EffectFlags) -> Self {
-        Self {
-            effects: flags,
-            ..self
+    pub const fn with_effects(self, effects: EffectFlags) -> Self {
+        Style {
+            foreground: self.foreground,
+            background: self.background,
+            effects,
         }
     }
 
@@ -237,7 +254,7 @@ Effect! {
     Overline 53 55 -> overline,
 }
 
-impl Style {
+impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     fn fmt_apply(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut semicolon = false;
         macro_rules! semi {
@@ -252,12 +269,12 @@ impl Style {
             f.write_str("\x1b[")?
         }
 
-        if let Some(fg) = self.foreground {
+        if let Some(fg) = self.foreground.get() {
             semicolon = true;
             fg.fmt_foreground_code(f)?;
         }
 
-        if let Some(bg) = self.background {
+        if let Some(bg) = self.background.get() {
             semi!();
             semicolon = true;
             bg.fmt_background_code(f)?;
@@ -287,19 +304,19 @@ impl Style {
         }
 
         if !cfg!(feature = "nested-formats") || self.is_complete() {
-            return Self::fmt_clear_all(f);
+            return Style::fmt_clear_all(f);
         }
 
         if !self.is_plain() {
             f.write_str("\x1b[")?
         }
 
-        if self.foreground.is_some() {
+        if self.foreground.get().is_some() {
             semicolon = true;
             ansi::Default.fmt_foreground_code(f)?;
         }
 
-        if self.background.is_some() {
+        if self.background.get().is_some() {
             semi!();
             semicolon = true;
             ansi::Default.fmt_background_code(f)?;
@@ -318,23 +335,19 @@ impl Style {
         Ok(())
     }
 
-    fn fmt_clear_all(f: &mut fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str("\x1b[0m")
-    }
-
     pub fn apply(self) -> impl core::fmt::Display + core::fmt::Debug {
-        struct Prefix {
-            style: Style,
+        struct Prefix<F, B> {
+            style: Style<F, B>,
         }
 
-        impl core::fmt::Display for Prefix {
+        impl<F: OptionalColor, B: OptionalColor> core::fmt::Display for Prefix<F, B> {
             #[inline]
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.style.fmt_apply(f)
             }
         }
 
-        impl core::fmt::Debug for Prefix {
+        impl<F: OptionalColor, B: OptionalColor> core::fmt::Debug for Prefix<F, B> {
             #[inline]
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.style.fmt_apply(f)
@@ -345,18 +358,18 @@ impl Style {
     }
 
     pub fn clear(self) -> impl core::fmt::Display + core::fmt::Debug {
-        struct Suffix {
-            style: Style,
+        struct Suffix<F, B> {
+            style: Style<F, B>,
         }
 
-        impl core::fmt::Display for Suffix {
+        impl<F: OptionalColor, B: OptionalColor> core::fmt::Display for Suffix<F, B> {
             #[inline]
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.style.fmt_clear(f)
             }
         }
 
-        impl core::fmt::Debug for Suffix {
+        impl<F: OptionalColor, B: OptionalColor> core::fmt::Debug for Suffix<F, B> {
             #[inline]
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.style.fmt_clear(f)

@@ -9,6 +9,9 @@ pub mod xterm;
 
 pub use style::{Effect, EffectFlags, Style};
 
+#[derive(Debug, Clone, Copy)]
+pub struct NoColor;
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color {
     Ansi(ansi::AnsiColors),
@@ -97,5 +100,48 @@ impl WriteColor for Color {
             Color::Xterm(color) => color.fmt_background(f),
             Color::Rgb(color) => color.fmt_background(f),
         }
+    }
+}
+
+impl WriteColor for core::convert::Infallible {
+    fn fmt_foreground_code(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match *self {}
+    }
+
+    fn fmt_background_code(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match *self {}
+    }
+}
+
+pub trait OptionalColor {
+    type Color: WriteColor;
+
+    fn get(&self) -> Option<Self::Color>;
+}
+
+impl<C: WriteColor + Copy> OptionalColor for C {
+    type Color = Self;
+
+    #[inline]
+    fn get(&self) -> Option<Self::Color> {
+        Some(*self)
+    }
+}
+
+impl<C: WriteColor + Copy> OptionalColor for Option<C> {
+    type Color = C;
+
+    #[inline]
+    fn get(&self) -> Option<Self::Color> {
+        *self
+    }
+}
+
+impl OptionalColor for NoColor {
+    type Color = core::convert::Infallible;
+
+    #[inline]
+    fn get(&self) -> Option<Self::Color> {
+        None
     }
 }
