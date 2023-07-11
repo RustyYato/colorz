@@ -111,11 +111,11 @@ AnsiColorMethods! {
         Bold bold into_bold
         Dimmed dimmed into_dimmed
         Italic italics into_italics
-        Underline underlined into_underlined
-        DoubleUnderline double_underlined into_double_underlined
+        Underline underline into_underline
+        DoubleUnderline double_underline into_double_underline
         Blink blink into_blink
         BlinkFast blink_fast into_blink_fast
-        Reversed reversed into_reversed
+        Reversed reversed into_reverse
         Hidden hide into_hide
         Strikethrough strikethrough into_strikethrough
         Overline overline into_overline
