@@ -1,0 +1,101 @@
+#![no_std]
+#![forbid(unsafe_code)]
+
+pub mod ansi;
+pub mod mode;
+pub mod rgb;
+mod style;
+pub mod xterm;
+
+pub use style::{Effect, EffectFlags, Style};
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Color {
+    Ansi(ansi::AnsiColors),
+    Xterm(xterm::XtermColors),
+    Rgb(rgb::Rgb),
+}
+
+pub trait AnsiColorCode {
+    type Dynamic;
+
+    fn into_dynamic(self) -> Self::Dynamic;
+
+    fn foreground_code(&self) -> &'static str;
+
+    fn background_code(&self) -> &'static str;
+
+    fn foreground_escape(&self) -> &'static str;
+
+    fn background_escape(&self) -> &'static str;
+}
+
+impl<C: AnsiColorCode> WriteColor for C {
+    fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.foreground_code())
+    }
+
+    fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.background_code())
+    }
+
+    fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.foreground_escape())
+    }
+
+    fn fmt_background(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.background_escape())
+    }
+}
+
+pub trait WriteColor {
+    fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+
+    fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+
+    fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("\x1b[")?;
+        self.fmt_foreground_code(f)?;
+        f.write_str("m")
+    }
+
+    fn fmt_background(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("\x1b[")?;
+        self.fmt_background_code(f)?;
+        f.write_str("m")
+    }
+}
+
+impl WriteColor for Color {
+    fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Color::Ansi(color) => color.fmt_foreground_code(f),
+            Color::Xterm(color) => color.fmt_foreground_code(f),
+            Color::Rgb(color) => color.fmt_background_code(f),
+        }
+    }
+
+    fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Color::Ansi(color) => color.fmt_background_code(f),
+            Color::Xterm(color) => color.fmt_background_code(f),
+            Color::Rgb(color) => color.fmt_background_code(f),
+        }
+    }
+
+    fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Color::Ansi(color) => color.fmt_foreground(f),
+            Color::Xterm(color) => color.fmt_foreground(f),
+            Color::Rgb(color) => color.fmt_foreground(f),
+        }
+    }
+
+    fn fmt_background(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Color::Ansi(color) => color.fmt_background(f),
+            Color::Xterm(color) => color.fmt_background(f),
+            Color::Rgb(color) => color.fmt_background(f),
+        }
+    }
+}
