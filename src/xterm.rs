@@ -8,7 +8,7 @@ use crate::AnsiColorCode;
 macro_rules! XTerm {
     ($($code:literal $name:ident)*) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-        pub enum XtermColors {
+        pub enum XtermColor {
             $($name,)*
         }
 
@@ -18,7 +18,7 @@ macro_rules! XTerm {
         )*
 
 
-        impl XtermColors {
+        impl XtermColor {
             pub const fn foreground_code(&self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_CODE,)*
@@ -44,7 +44,7 @@ macro_rules! XTerm {
             }
         }
 
-        impl AnsiColorCode for XtermColors {
+        impl AnsiColorCode for XtermColor {
             type Dynamic = Self;
 
             #[inline]
@@ -76,7 +76,7 @@ macro_rules! XTerm {
 
         $(
             impl $name {
-                pub const DYNAMIC: XtermColors = XtermColors::$name;
+                pub const DYNAMIC: XtermColor = XtermColor::$name;
 
                 pub const FOREGROUND_CODE: &'static str = concat!("38;5;", stringify!($code));
                 pub const BACKGROUND_CODE: &'static str = concat!("48;5;", stringify!($code));
@@ -86,7 +86,7 @@ macro_rules! XTerm {
             }
 
             impl AnsiColorCode for $name {
-                type Dynamic = XtermColors;
+                type Dynamic = XtermColor;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {

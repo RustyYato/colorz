@@ -1,11 +1,11 @@
 use crate::AnsiColorCode;
 
-macro_rules! AnsiColors {
+macro_rules! AnsiColor {
     (
         $($name:ident $fg:literal $bg:literal)*
     ) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-        pub enum AnsiColors {
+        pub enum AnsiColor {
             $($name,)*
         }
 
@@ -14,7 +14,7 @@ macro_rules! AnsiColors {
             pub struct $name;
         )*
 
-        impl AnsiColors {
+        impl AnsiColor {
             pub const fn foreground_code(&self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_CODE,)*
@@ -40,7 +40,7 @@ macro_rules! AnsiColors {
             }
         }
 
-        impl AnsiColorCode for AnsiColors {
+        impl AnsiColorCode for AnsiColor {
             type Dynamic = Self;
 
             #[inline]
@@ -71,7 +71,7 @@ macro_rules! AnsiColors {
 
         $(
             impl $name {
-                pub const DYNAMIC: AnsiColors = AnsiColors::$name;
+                pub const DYNAMIC: AnsiColor = AnsiColor::$name;
 
                 pub const FOREGROUND_CODE: &'static str = stringify!($fg);
                 pub const BACKGROUND_CODE: &'static str = stringify!($bg);
@@ -81,7 +81,7 @@ macro_rules! AnsiColors {
             }
 
             impl AnsiColorCode for $name {
-                type Dynamic = AnsiColors;
+                type Dynamic = AnsiColor;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
@@ -113,7 +113,7 @@ macro_rules! AnsiColors {
     };
 }
 
-AnsiColors! {
+AnsiColor! {
     Black   30 40
     Red     31 41
     Green   32 42

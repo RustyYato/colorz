@@ -14,8 +14,8 @@ pub struct NoColor;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color {
-    Ansi(ansi::AnsiColors),
-    Xterm(xterm::XtermColors),
+    Ansi(ansi::AnsiColor),
+    Xterm(xterm::XtermColor),
     Rgb(rgb::Rgb),
 }
 

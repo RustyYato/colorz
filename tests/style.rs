@@ -10,7 +10,7 @@ fn test_effects() {
 #[test]
 fn test_foreground() {
     let style = Style::new()
-        .foreground(colorize::Color::Ansi(colorize::ansi::AnsiColors::Blue))
+        .foreground(colorize::Color::Ansi(colorize::ansi::AnsiColor::Blue))
         .dimmed();
 
     assert_eq!(format!("{}", style.apply()), "\x1b[34;2m")
@@ -19,7 +19,7 @@ fn test_foreground() {
 #[test]
 fn test_background() {
     let style = Style::new()
-        .background(colorize::Color::Ansi(colorize::ansi::AnsiColors::Blue))
+        .background(colorize::Color::Ansi(colorize::ansi::AnsiColor::Blue))
         .dimmed();
 
     assert_eq!(format!("{}", style.apply()), "\x1b[44;2m");
@@ -27,9 +27,8 @@ fn test_background() {
 
 #[test]
 fn test_partial() {
-    let background =
-        Style::new().background(colorize::Color::Ansi(colorize::ansi::AnsiColors::Red));
-    let style = Style::new().foreground(colorize::Color::Ansi(colorize::ansi::AnsiColors::Blue));
+    let background = Style::new().background(colorize::Color::Ansi(colorize::ansi::AnsiColor::Red));
+    let style = Style::new().foreground(colorize::Color::Ansi(colorize::ansi::AnsiColor::Blue));
 
     let x = format!(
         "{}hello {}my{} world{}",
