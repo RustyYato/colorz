@@ -25,7 +25,6 @@ use crate::{ansi, Color, ComptimeColor, OptionalColor, WriteColor};
 ///
 /// let x = "hello world".style_with(style);
 /// ```
-///
 #[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Style<F = Option<Color>, B = Option<Color>, U = Option<Color>> {
@@ -133,7 +132,7 @@ macro_rules! Effect {
             }
         }
 
-        impl<F, B, U> Style<F, B, U> {$(
+        impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {$(
             $(#[$meta])*
             #[inline(always)]
             pub fn $set_func(self) -> Self {
@@ -283,10 +282,10 @@ impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
     }
 }
 
-impl<F, B, U> Style<F, B, U> {
+impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     /// Set the foreground color
     #[inline(always)]
-    pub fn fg<T>(self, color: T) -> Style<T, B, U> {
+    pub const fn fg<T>(self, color: T) -> Style<T, B, U> {
         Style {
             foreground: color,
             background: self.background,
@@ -318,47 +317,74 @@ impl<F, B, U> Style<F, B, U> {
     }
 
     #[inline(always)]
-    pub(crate) fn as_ref(&self) -> Style<crate::Ref<F>, crate::Ref<B>, crate::Ref<U>> {
-        Style {
-            foreground: crate::Ref(&self.foreground),
-            background: crate::Ref(&self.background),
-            underline_color: crate::Ref(&self.underline_color),
-            effects: self.effects,
-        }
-    }
-}
-
-impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
-    /// Set the foreground color
-    #[inline(always)]
-    pub const fn const_fg<T>(self, color: T) -> Style<T, B, U> {
-        Style {
-            foreground: color,
-            background: self.background,
-            underline_color: self.underline_color,
-            effects: self.effects,
-        }
+    pub fn is_plain(&self) -> bool {
+        self.effects.is_plain()
+            && self.foreground.get().is_none()
+            && self.background.get().is_none()
     }
 
-    /// Set the background color
     #[inline(always)]
-    pub const fn const_bg<T>(self, color: T) -> Style<F, T, U> {
-        Style {
-            foreground: self.foreground,
-            background: color,
-            underline_color: self.underline_color,
-            effects: self.effects,
+    pub fn is_complete(&self) -> bool {
+        self.effects == EffectFlags::all()
+            && self.foreground.get().is_some()
+            && self.background.get().is_some()
+    }
+
+    #[inline(always)]
+    pub const fn is(&self, opt: Effect) -> bool {
+        self.effects.is(opt)
+    }
+
+    #[inline(always)]
+    pub fn effects<I: IntoIterator>(self, flags: I) -> Self
+    where
+        I::Item: Into<Effect>,
+    {
+        Self {
+            effects: EffectFlags::from_iter(flags),
+            ..self
         }
     }
 
-    /// Set the underline color
     #[inline(always)]
-    pub fn const_underline_color<T>(self, color: T) -> Style<F, B, T> {
+    pub const fn effects_array<const N: usize>(self, effects: [Effect; N]) -> Self {
         Style {
-            foreground: self.foreground,
-            background: self.background,
-            underline_color: color,
-            effects: self.effects,
+            effects: EffectFlags::from_array(effects),
+            ..self
+        }
+    }
+
+    #[inline(always)]
+    pub const fn effect_flags(self, effects: EffectFlags) -> Self {
+        Style { effects, ..self }
+    }
+
+    #[inline(always)]
+    pub const fn clear_effects(self) -> Self {
+        self.effect_flags(EffectFlags::new())
+    }
+
+    #[inline(always)]
+    pub const fn with(self, opt: Effect) -> Self {
+        Style {
+            effects: self.effects.with(opt),
+            ..self
+        }
+    }
+
+    #[inline(always)]
+    pub const fn without(self, opt: Effect) -> Self {
+        Style {
+            effects: self.effects.without(opt),
+            ..self
+        }
+    }
+
+    #[inline(always)]
+    pub const fn toggled(self, opt: Effect) -> Self {
+        Style {
+            effects: self.effects.toggled(opt),
+            ..self
         }
     }
 }
@@ -382,116 +408,6 @@ impl<F: ComptimeColor + Copy, B: ComptimeColor + Copy, U: ComptimeColor + Copy> 
             underline_color: U::VALUE,
             effects: self.effects,
         }
-    }
-}
-
-impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
-    #[inline(always)]
-    pub fn is_plain(&self) -> bool {
-        self.effects.is_plain()
-            && self.foreground.get().is_none()
-            && self.background.get().is_none()
-    }
-
-    #[inline(always)]
-    pub fn is_complete(&self) -> bool {
-        self.effects == EffectFlags::all()
-            && self.foreground.get().is_some()
-            && self.background.get().is_some()
-    }
-
-    #[inline(always)]
-    pub const fn is(&self, opt: Effect) -> bool {
-        self.effects.is(opt)
-    }
-}
-
-impl<F, B, U> Style<F, B, U> {
-    #[inline(always)]
-    pub fn effects<I: IntoIterator>(self, flags: I) -> Self
-    where
-        I::Item: Into<Effect>,
-    {
-        Self {
-            effects: EffectFlags::from_iter(flags),
-            ..self
-        }
-    }
-
-    #[inline(always)]
-    pub fn effect_flags(self, effects: EffectFlags) -> Self {
-        Style { effects, ..self }
-    }
-
-    #[inline(always)]
-    pub fn clear_effects(self) -> Self {
-        self.effect_flags(EffectFlags::new())
-    }
-
-    #[inline(always)]
-    pub fn with(self, opt: Effect) -> Self {
-        Style {
-            effects: self.effects.with(opt),
-            ..self
-        }
-    }
-
-    #[inline(always)]
-    pub fn without(self, opt: Effect) -> Self {
-        Style {
-            effects: self.effects.without(opt),
-            ..self
-        }
-    }
-
-    #[inline(always)]
-    pub fn toggled(self, opt: Effect) -> Self {
-        Style {
-            effects: self.effects.toggled(opt),
-            ..self
-        }
-    }
-}
-
-impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
-    #[inline(always)]
-    pub const fn const_effect_flags(self, effects: EffectFlags) -> Self {
-        Style {
-            foreground: self.foreground,
-            background: self.background,
-            underline_color: self.underline_color,
-            effects,
-        }
-    }
-
-    #[inline(always)]
-    pub const fn const_effects<const N: usize>(self, effects: [Effect; N]) -> Self {
-        Style {
-            foreground: self.foreground,
-            background: self.background,
-            underline_color: self.underline_color,
-            effects: EffectFlags::from_array(effects),
-        }
-    }
-
-    #[inline(always)]
-    pub const fn const_clear_effects(self) -> Self {
-        self.const_effect_flags(EffectFlags::new())
-    }
-
-    #[inline(always)]
-    pub const fn const_with(self, opt: Effect) -> Self {
-        self.const_effect_flags(self.effects.with(opt))
-    }
-
-    #[inline(always)]
-    pub const fn const_without(self, opt: Effect) -> Self {
-        self.const_effect_flags(self.effects.without(opt))
-    }
-
-    #[inline(always)]
-    pub const fn const_toggled(self, opt: Effect) -> Self {
-        self.const_effect_flags(self.effects.toggled(opt))
     }
 }
 

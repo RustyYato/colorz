@@ -105,7 +105,7 @@ macro_rules! AnsiColorMethods {
             })*
         }
 
-        impl<T, F, B, U> StyledValue<T, F, B, U> {
+        impl<T, F: OptionalColor, B: OptionalColor, U: OptionalColor> StyledValue<T, F, B, U> {
             #[inline]
             pub const fn style(&self) -> StyledValue<&Self> {
                 StyledValue {
@@ -213,7 +213,7 @@ AnsiColorMethods! {
         DoubleUnderline double_underline into_double_underline
         Blink blink into_blink
         BlinkFast blink_fast into_blink_fast
-        Reversed reversed into_reverse
+        Reversed reverse into_reverse
         Hidden hide into_hide
         Strikethrough strikethrough into_strikethrough
         Overline overline into_overline
@@ -231,11 +231,11 @@ impl<T, F: OptionalColor, B: OptionalColor, U: OptionalColor> StyledValue<T, F, 
         let use_colors = crate::mode::should_color(self.stream);
 
         if use_colors {
-            self.style.as_ref().apply().fmt(fmt)?;
+            self.style.apply().fmt(fmt)?;
         }
         f(&self.value, fmt)?;
         if use_colors {
-            self.style.as_ref().clear().fmt(fmt)?;
+            self.style.clear().fmt(fmt)?;
         }
         Ok(())
     }

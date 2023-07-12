@@ -76,8 +76,8 @@ Create compile time style sheets
 use colorize::{Colorize, Style, Effect, xterm};
 
 const MY_STYLE: Style = Style::new()
-    .const_fg(xterm::ForestGreen)
-    .const_effects([Effect::Italic, Effect::Bold])
+    .fg(xterm::ForestGreen)
+    .effects_array([Effect::Italic, Effect::Bold])
     .const_into_runtime_style();
 
 // styles `my text` in forest green with italics and bold

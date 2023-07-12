@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+// #![warn(missing_docs)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -251,14 +251,14 @@ pub trait OptionalColor: seal::Seal {
     fn get(&self) -> Option<Self::Color>;
 }
 
-impl<C: WriteColor + Clone> OptionalColor for C {
+impl<C: WriteColor> OptionalColor for C {
     type Color = Self;
 
     const KIND: Kind = Kind::AlwaysSome;
 
     #[inline]
     fn get(&self) -> Option<Self::Color> {
-        Some(self.clone())
+        Some(*self)
     }
 }
 
@@ -281,27 +281,6 @@ impl OptionalColor for NoColor {
     #[inline]
     fn get(&self) -> Option<Self::Color> {
         None
-    }
-}
-
-struct Ref<'a, T: ?Sized>(&'a T);
-
-impl<T: ?Sized> Copy for Ref<'_, T> {}
-impl<T: ?Sized> Clone for Ref<'_, T> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<T: ?Sized> seal::Seal for Ref<'_, T> {}
-impl<T: ?Sized + OptionalColor> OptionalColor for Ref<'_, T> {
-    type Color = T::Color;
-
-    const KIND: Kind = T::KIND;
-
-    #[inline]
-    fn get(&self) -> Option<Self::Color> {
-        self.0.get()
     }
 }
 
