@@ -68,7 +68,11 @@ pub enum Color {
     Rgb(rgb::RgbColor),
 }
 
-pub trait AnsiColorCode {
+mod seal {
+    pub trait Seal {}
+}
+
+pub trait AnsiColorCode: seal::Seal {
     type Dynamic;
 
     #[doc(hidden)]

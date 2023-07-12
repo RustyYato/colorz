@@ -162,6 +162,7 @@ macro_rules! XTerm {
             }
         }
 
+        impl crate::seal::Seal for XtermColor {}
         impl AnsiColorCode for XtermColor {
             type Dynamic = Self;
 
@@ -233,6 +234,7 @@ macro_rules! XTerm {
                 pub const UNDERLINE_ESCAPE: &'static str = concat!("\x1b[58;5;", stringify!($code) ,"m");
             }
 
+            impl crate::seal::Seal for $name {}
             impl AnsiColorCode for $name {
                 type Dynamic = XtermColor;
 

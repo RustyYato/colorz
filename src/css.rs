@@ -129,6 +129,7 @@ macro_rules! Css {
             }
         }
 
+        impl crate::seal::Seal for CssColor {}
         impl AnsiColorCode for CssColor {
             type Dynamic = Self;
 
@@ -201,6 +202,7 @@ macro_rules! Css {
                 pub const UNDERLINE_ESCAPE: &'static str = Rgb::<$r, $g, $b>::UNDERLINE_ESCAPE;
             }
 
+            impl crate::seal::Seal for $name {}
             impl AnsiColorCode for $name {
                 type Dynamic = CssColor;
 

@@ -105,6 +105,7 @@ macro_rules! MkAnsiColor {
             }
         }
 
+        impl crate::seal::Seal for AnsiColor {}
         impl AnsiColorCode for AnsiColor {
             type Dynamic = Self;
 
@@ -168,6 +169,7 @@ macro_rules! MkAnsiColor {
                 pub const BACKGROUND_ESCAPE: &'static str = concat!("\x1b[", stringify!($bg) ,"m");
             }
 
+            impl crate::seal::Seal for $name {}
             impl AnsiColorCode for $name {
                 type Dynamic = AnsiColor;
 

@@ -146,6 +146,7 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> Rgb<RED, GREEN, BLUE> {
     pub const UNDERLINE_ESCAPE: &'static str = to_str(&escape(Self::UNDERLINE_CODE_DATA));
 }
 
+impl<const RED: u8, const GREEN: u8, const BLUE: u8> crate::seal::Seal for Rgb<RED, GREEN, BLUE> {}
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for Rgb<RED, GREEN, BLUE> {
     type Dynamic = RgbColor;
 
