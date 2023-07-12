@@ -7,5 +7,9 @@ edition = "2021"
 
 [features]
 
+default = ['std']
+
+std = ['alloc']
+alloc = []
+
 [dependencies]
-owo-colors = '3'

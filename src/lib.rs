@@ -1,6 +1,11 @@
 #![no_std]
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
+
 pub mod ansi;
 pub mod css;
 pub mod mode;
@@ -9,9 +14,21 @@ mod style;
 mod value;
 pub mod xterm;
 
+#[non_exhaustive]
 pub struct StyledValue<T, F = NoColor, B = NoColor> {
-    value: T,
-    style: Style<F, B>,
+    pub value: T,
+    pub style: Style<F, B>,
+    pub stream: Stream,
+}
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Stream {
+    AlwaysColor,
+    NeverColor,
+    Stdout,
+    Stderr,
+    Stdin,
 }
 
 impl<T: ?Sized> Colorize for T {}

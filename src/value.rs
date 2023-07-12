@@ -1,10 +1,14 @@
 use core::fmt::{self, Display};
 
-use crate::{ansi, Effect, OptionalColor, Style, StyledValue};
+use crate::{ansi, Effect, OptionalColor, Stream, Style, StyledValue};
 
 impl<T, F, B> StyledValue<T, F, B> {
-    pub const fn new(value: T, style: Style<F, B>) -> Self {
-        Self { value, style }
+    pub const fn new(value: T, style: Style<F, B>, stream: Stream) -> Self {
+        Self {
+            value,
+            style,
+            stream,
+        }
     }
 }
 
@@ -21,6 +25,7 @@ macro_rules! AnsiColorMethods {
                 StyledValue {
                     value: self,
                     style: Style::new(),
+                    stream: crate::Stream::AlwaysColor,
                 }
             }
 
@@ -28,6 +33,7 @@ macro_rules! AnsiColorMethods {
                 StyledValue {
                     value: self,
                     style: Style::new(),
+                    stream: crate::Stream::AlwaysColor,
                 }
             }
 
@@ -57,26 +63,38 @@ macro_rules! AnsiColorMethods {
         }
 
         impl<T, F, B> StyledValue<T, F, B> {
-            $(pub fn $fun(self) -> StyledValue<T, ansi::$color, B> {
+            $(#[inline] pub fn $fun(self) -> StyledValue<T, ansi::$color, B> {
                 StyledValue {
                     value: self.value,
                     style: self.style.foreground(ansi::$color),
+                    stream: self.stream,
                 }
             })*
 
-            $(pub fn $on_fun(self) -> StyledValue<T, F, ansi::$color> {
+            $(#[inline] pub fn $on_fun(self) -> StyledValue<T, F, ansi::$color> {
                 StyledValue {
                     value: self.value,
                     style: self.style.background(ansi::$color),
+                    stream: self.stream,
                 }
             })*
 
-            $(pub fn $effect_fun(self) -> StyledValue<T, F, B> {
+            $(#[inline] pub fn $effect_fun(self) -> StyledValue<T, F, B> {
                 StyledValue {
                     value: self.value,
                     style: self.style.with(Effect::$effect),
+                    stream: self.stream,
                 }
             })*
+
+            #[inline]
+            pub fn stream(self, stream: Stream) -> Self  {
+                Self {
+                    value: self.value,
+                    style: self.style,
+                    stream,
+                }
+            }
         }
 
         fn _all_effects_accounted_for(e: Effect) {
@@ -130,9 +148,16 @@ impl<T, F: OptionalColor, B: OptionalColor> StyledValue<T, F, B> {
         fmt: &mut fmt::Formatter<'_>,
         f: impl FnOnce(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
     ) -> fmt::Result {
-        self.style.as_ref().apply().fmt(fmt)?;
+        let use_colors = crate::mode::should_color(self.stream);
+
+        if use_colors {
+            self.style.as_ref().apply().fmt(fmt)?;
+        }
         f(&self.value, fmt)?;
-        self.style.as_ref().clear().fmt(fmt)
+        if use_colors {
+            self.style.as_ref().clear().fmt(fmt)?;
+        }
+        Ok(())
     }
 }
 
