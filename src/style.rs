@@ -164,8 +164,8 @@ impl EffectFlags {
     }
 
     #[inline]
-    pub const fn iter(self) -> StyleFlagsIter {
-        StyleFlagsIter { data: self.data }
+    pub const fn iter(self) -> EffectFlagsIter {
+        EffectFlagsIter { data: self.data }
     }
 
     #[inline(always)]
@@ -605,7 +605,7 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     }
 }
 
-pub struct StyleFlagsIter {
+pub struct EffectFlagsIter {
     data: u16,
 }
 
@@ -633,7 +633,7 @@ impl<E: Into<Effect>> FromIterator<E> for EffectFlags {
 
 impl IntoIterator for EffectFlags {
     type Item = Effect;
-    type IntoIter = StyleFlagsIter;
+    type IntoIter = EffectFlagsIter;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -641,7 +641,7 @@ impl IntoIterator for EffectFlags {
     }
 }
 
-impl Iterator for StyleFlagsIter {
+impl Iterator for EffectFlagsIter {
     type Item = Effect;
 
     #[inline]

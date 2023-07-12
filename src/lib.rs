@@ -34,7 +34,7 @@ pub enum Stream {
 impl<T: ?Sized> Colorize for T {}
 pub use value::Colorize;
 
-pub use style::{Effect, EffectFlags, Style};
+pub use style::{Effect, EffectFlags, EffectFlagsIter, Style};
 
 #[derive(Debug, Clone, Copy)]
 pub struct NoColor;
