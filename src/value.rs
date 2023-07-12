@@ -37,6 +37,22 @@ macro_rules! AnsiColorMethods {
                 }
             }
 
+            fn color<C>(&self, color: C) -> StyledValue<&Self, C> {
+                self.style().color(color)
+            }
+
+            fn into_color<C>(self, color: C) -> StyledValue<Self, C> where Self: Sized {
+                self.into_style().color(color)
+            }
+
+            fn on_color<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, C> {
+                self.style().on_color(color)
+            }
+
+            fn into_on_color<C>(self, color: C) -> StyledValue<Self, crate::NoColor, C> where Self: Sized {
+                self.into_style().on_color(color)
+            }
+
             $(fn $fun(&self) -> StyledValue<&Self, ansi::$color> {
                 self.style().$fun()
             })*
@@ -63,6 +79,24 @@ macro_rules! AnsiColorMethods {
         }
 
         impl<T, F, B> StyledValue<T, F, B> {
+            #[inline]
+            pub fn color<C>(self, color: C) -> StyledValue<T, C, B> {
+                StyledValue {
+                    value: self.value,
+                    style: self.style.foreground(color),
+                    stream: self.stream,
+                }
+            }
+
+            #[inline]
+            pub fn on_color<C>(self, color: C) -> StyledValue<T, F, C> {
+                StyledValue {
+                    value: self.value,
+                    style: self.style.background(color),
+                    stream: self.stream,
+                }
+            }
+
             $(#[inline] pub fn $fun(self) -> StyledValue<T, ansi::$color, B> {
                 StyledValue {
                     value: self.value,
