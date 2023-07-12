@@ -119,6 +119,19 @@ impl EffectFlags {
     }
 
     #[inline(always)]
+    pub const fn from_array<const N: usize>(effects: [Effect; N]) -> Self {
+        let mut e = EffectFlags::new();
+        let mut i = 0;
+
+        while i < N {
+            e = e.with(effects[i]);
+            i += 1;
+        }
+
+        e
+    }
+
+    #[inline(always)]
     pub const fn is_plain(self) -> bool {
         self.data == 0
     }
@@ -346,13 +359,13 @@ impl<F, B, U> Style<F, B, U> {
     }
 
     #[inline(always)]
-    pub fn with_effects(self, effects: EffectFlags) -> Self {
+    pub fn effect_flags(self, effects: EffectFlags) -> Self {
         Style { effects, ..self }
     }
 
     #[inline(always)]
     pub fn clear_effects(self) -> Self {
-        self.with_effects(EffectFlags::new())
+        self.effect_flags(EffectFlags::new())
     }
 
     #[inline(always)]
@@ -382,7 +395,7 @@ impl<F, B, U> Style<F, B, U> {
 
 impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
     #[inline(always)]
-    pub const fn const_with_effects(self, effects: EffectFlags) -> Self {
+    pub const fn const_effect_flags(self, effects: EffectFlags) -> Self {
         Style {
             foreground: self.foreground,
             background: self.background,
@@ -392,23 +405,33 @@ impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
     }
 
     #[inline(always)]
+    pub const fn const_effects<const N: usize>(self, effects: [Effect; N]) -> Self {
+        Style {
+            foreground: self.foreground,
+            background: self.background,
+            underline_color: self.underline_color,
+            effects: EffectFlags::from_array(effects),
+        }
+    }
+
+    #[inline(always)]
     pub const fn const_clear_effects(self) -> Self {
-        self.const_with_effects(EffectFlags::new())
+        self.const_effect_flags(EffectFlags::new())
     }
 
     #[inline(always)]
     pub const fn const_with(self, opt: Effect) -> Self {
-        self.const_with_effects(self.effects.with(opt))
+        self.const_effect_flags(self.effects.with(opt))
     }
 
     #[inline(always)]
     pub const fn const_without(self, opt: Effect) -> Self {
-        self.const_with_effects(self.effects.without(opt))
+        self.const_effect_flags(self.effects.without(opt))
     }
 
     #[inline(always)]
     pub const fn const_toggled(self, opt: Effect) -> Self {
-        self.const_with_effects(self.effects.toggled(opt))
+        self.const_effect_flags(self.effects.toggled(opt))
     }
 }
 
@@ -487,7 +510,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 
         if self.effects.data.is_power_of_two() {
             let effect = self.effects.iter().next().unwrap();
-            f.write_str(effect.clear_escape())?;
+            f.write_str(effect.apply_escape())?;
 
             if let Some(fg) = self.foreground.get() {
                 fg.fmt_foreground(f)?;
