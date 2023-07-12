@@ -26,7 +26,7 @@ fn decode(mode: u8) -> Mode {
     match mode {
         self::DETECT => Mode::Detect,
         self::NEVER => Mode::Never,
-        self::ALWAYS => Mode::Detect,
+        self::ALWAYS => Mode::Always,
         _ => unreachable!(),
     }
 }
