@@ -412,6 +412,21 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
             }
         }
 
+        if self.effects.data.is_power_of_two() {
+            let effect = self.effects.iter().next().unwrap();
+            f.write_str(effect.clear_escape())?;
+
+            if let Some(fg) = self.foreground.get() {
+                fg.fmt_foreground(f)?;
+            }
+
+            if let Some(bg) = self.background.get() {
+                bg.fmt_background(f)?;
+            }
+
+            return Ok(());
+        }
+
         let mut semicolon = false;
         macro_rules! semi {
             () => {
@@ -436,12 +451,14 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
             bg.fmt_background_code(f)?;
         }
 
-        self.effects.try_for_each(|effect| {
-            semi!();
-            semicolon = true;
-            f.write_str(effect.apply_code())?;
-            Ok(())
-        })?;
+        if !self.effects.data.is_power_of_two() {
+            self.effects.try_for_each(|effect| {
+                semi!();
+                semicolon = true;
+                f.write_str(effect.apply_code())?;
+                Ok(())
+            })?;
+        }
 
         if !self.is_plain() {
             f.write_str("m")?
@@ -484,6 +501,21 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
             }
         }
 
+        if self.effects.data.is_power_of_two() {
+            let effect = self.effects.iter().next().unwrap();
+            f.write_str(effect.clear_escape())?;
+
+            if self.foreground.get().is_some() {
+                ansi::Default.fmt_foreground(f)?;
+            }
+
+            if self.background.get().is_some() {
+                ansi::Default.fmt_background(f)?;
+            }
+
+            return Ok(());
+        }
+
         let mut semicolon = false;
         macro_rules! semi {
             () => {
@@ -512,12 +544,14 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
             ansi::Default.fmt_background_code(f)?;
         }
 
-        self.effects.try_for_each(|effect| {
-            semi!();
-            semicolon = true;
-            f.write_str(effect.clear_code())?;
-            Ok(())
-        })?;
+        if !self.effects.data.is_power_of_two() {
+            self.effects.try_for_each(|effect| {
+                semi!();
+                semicolon = true;
+                f.write_str(effect.clear_code())?;
+                Ok(())
+            })?;
+        }
 
         if !self.is_plain() {
             f.write_str("m")?
