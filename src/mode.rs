@@ -12,6 +12,7 @@ static STREAMS: [AtomicU8; 3] = [
 ];
 
 #[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Mode {
     Detect,
     Never,
@@ -105,6 +106,36 @@ pub fn set(mode: Mode) {
     }
 
     MODE.store(mode as u8, Ordering::Release);
+}
+
+impl Mode {
+    #[cfg(feature = "std")]
+    pub fn from_env() -> Mode {
+        if cfg!(feature = "strip-colors") {
+            return Mode::Never;
+        }
+
+        if std::env::var_os("NO_COLOR").is_some() {
+            Mode::Never
+        } else if std::env::var_os("ALWAYS_COLOR").is_some() {
+            Mode::Always
+        } else {
+            Mode::Detect
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+pub fn set_from_env() {
+    if cfg!(feature = "strip-colors") {
+        return;
+    }
+
+    if std::env::var_os("NO_COLOR").is_some() {
+        set(Mode::Never);
+    } else if std::env::var_os("ALWAYS_COLOR").is_some() {
+        set(Mode::Always);
+    }
 }
 
 pub fn replace(mode: Mode) -> Mode {
