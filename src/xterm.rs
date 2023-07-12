@@ -6,7 +6,7 @@
 use crate::AnsiColorCode;
 
 macro_rules! XTerm {
-    ($($code:literal $name:ident)*) => {
+    ($($code:tt $name:ident)*) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum XtermColor {
             $($name,)*
@@ -22,6 +22,11 @@ macro_rules! XTerm {
             #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
             pub struct $name;
         )*
+
+        #[macro_export]
+        macro_rules! xterm_from_code {
+            $(($code) => { $crate::xterm::$name };)*
+        }
 
         impl From<u8> for XtermColor {
             #[inline(always)]
