@@ -37,6 +37,25 @@ macro_rules! AnsiColorMethods {
                 }
             }
 
+            fn into_style_with<F, B, U>(self, style: Style<F, B, U>) -> StyledValue<Self, F, B, U>
+            where
+                Self: Sized,
+            {
+                StyledValue {
+                    value: self,
+                    style,
+                    stream: crate::Stream::AlwaysColor,
+                }
+            }
+
+            fn style_with<F, B, U>(&self, style: Style<F, B, U>) -> StyledValue<&Self, F, B, U> {
+                StyledValue {
+                    value: self,
+                    style,
+                    stream: crate::Stream::AlwaysColor,
+                }
+            }
+
             fn color<C>(&self, color: C) -> StyledValue<&Self, C> {
                 self.style().color(color)
             }
@@ -87,6 +106,24 @@ macro_rules! AnsiColorMethods {
         }
 
         impl<T, F, B, U> StyledValue<T, F, B, U> {
+            #[inline]
+            pub const fn style(&self) -> StyledValue<&Self> {
+                StyledValue {
+                    value: self,
+                    style: Style::new(),
+                    stream: crate::Stream::AlwaysColor,
+                }
+            }
+
+            #[inline]
+            pub const fn into_style(self) -> StyledValue<Self> {
+                StyledValue {
+                    value: self,
+                    style: Style::new(),
+                    stream: crate::Stream::AlwaysColor,
+                }
+            }
+
             #[inline]
             pub fn color<C>(self, color: C) -> StyledValue<T, C, B, U> {
                 StyledValue {
