@@ -1,9 +1,15 @@
+//! 48-bit color values. Not as widely supported as standard ANSI or Xterm.
+
 use crate::{AnsiColorCode, WriteColor};
 
+/// An Rgb value for color
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RgbColor {
+    /// The red component of the color
     pub red: u8,
+    /// The green component of the color
     pub green: u8,
+    /// The blue component of the color
     pub blue: u8,
 }
 
@@ -103,10 +109,15 @@ const fn to_str(x: &[u8]) -> &str {
     }
 }
 
+/// A compile time Rgb color type
+///
+/// You can convert this type to [`Rgb`] via [`From`] or [`Self::DYNAMIC`]
+/// and to [`Color`] or [`Option<Color>`] via [`From`]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Rgb<const RED: u8, const GREEN: u8, const BLUE: u8>;
 
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> Rgb<RED, GREEN, BLUE> {
+    /// The corrosponding value of [`RgbColor`]
     pub const DYNAMIC: RgbColor = RgbColor {
         red: RED,
         green: GREEN,
@@ -117,14 +128,21 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> Rgb<RED, GREEN, BLUE> {
     const BACKGROUND_CODE_DATA: [u8; 16] = code(b'4', RED, GREEN, BLUE);
     const UNDERLINE_CODE_DATA: [u8; 16] = code(b'5', RED, GREEN, BLUE);
 
+    /// The ANSI color code
     pub const CODE: &'static str = to_str(&raw_code(RED, GREEN, BLUE));
 
+    /// The ANSI foreground color arguments
     pub const FOREGROUND_CODE: &'static str = to_str(&Self::FOREGROUND_CODE_DATA);
+    /// The ANSI background color arguments
     pub const BACKGROUND_CODE: &'static str = to_str(&Self::BACKGROUND_CODE_DATA);
+    /// The ANSI underline color arguments
     pub const UNDERLINE_CODE: &'static str = to_str(&Self::UNDERLINE_CODE_DATA);
 
+    /// The ANSI foreground color sequence
     pub const FOREGROUND_ESCAPE: &'static str = to_str(&escape(Self::FOREGROUND_CODE_DATA));
+    /// The ANSI background color sequence
     pub const BACKGROUND_ESCAPE: &'static str = to_str(&escape(Self::BACKGROUND_CODE_DATA));
+    /// The ANSI underline color sequence
     pub const UNDERLINE_ESCAPE: &'static str = to_str(&escape(Self::UNDERLINE_CODE_DATA));
 }
 

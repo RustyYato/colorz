@@ -1,16 +1,32 @@
+//! CSS named colors. Not as widely supported as standard ANSI as it relies on 48bit color support.
+//!
+//! Reference: https://www.w3schools.com/cssref/css_colors.asp Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/color_value
+
 use crate::rgb::Rgb;
 use crate::AnsiColorCode;
 
 macro_rules! Css {
     ($($name:ident ($r:literal, $g:literal, $b:literal))*) => {
+        /// A runtime Css color type
+        ///
+        /// Can be converted from a u8 via [`From`] or [`from_code`](Self::from_code) based on the Xterm color code
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum CssColor {
-            $($name,)*
+            $(
+                #[doc = concat!("The runtime version of [`", stringify!($name), "`](self::", stringify!($name), ")")]
+                #[doc = concat!(" repesenting the rgb color value (", stringify!($r), ", ", stringify!($g), ",", stringify!($b), ")")]
+                $name,
+            )*
         }
 
         const _: [(); core::mem::size_of::<CssColor>()] = [(); 1];
 
         $(
+            /// A compile time css color type
+            #[doc = concat!(" repesenting the rgb color value (", stringify!($r), ", ", stringify!($g), ",", stringify!($b), ")")]
+            ///
+            /// You can convert this type to [`CssColor`] via [`From`] or [`Self::DYNAMIC`]
+            /// and to [`Color`] or [`Option<Color>`] via [`From`]
             #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
             pub struct $name;
         )*
@@ -56,6 +72,7 @@ macro_rules! Css {
         )*
 
         impl CssColor {
+            /// The ANSI color code
             #[inline]
             pub const fn code(self) -> &'static str {
                 match self {
@@ -63,6 +80,7 @@ macro_rules! Css {
                 }
             }
 
+            /// The ANSI foreground color arguments
             #[inline]
             pub const fn foreground_code(self) -> &'static str {
                 match self {
@@ -70,6 +88,7 @@ macro_rules! Css {
                 }
             }
 
+            /// The ANSI background color arguments
             #[inline]
             pub const fn background_code(self) -> &'static str {
                 match self {
@@ -77,6 +96,7 @@ macro_rules! Css {
                 }
             }
 
+            /// The ANSI underline color arguments
             #[inline]
             pub const fn underline_code(self) -> &'static str {
                 match self {
@@ -84,6 +104,7 @@ macro_rules! Css {
                 }
             }
 
+            /// The ANSI foreground color sequence
             #[inline]
             pub const fn foreground_escape(self) -> &'static str {
                 match self {
@@ -91,6 +112,7 @@ macro_rules! Css {
                 }
             }
 
+            /// The ANSI background color sequence
             #[inline]
             pub const fn background_escape(self) -> &'static str {
                 match self {
@@ -98,6 +120,7 @@ macro_rules! Css {
                 }
             }
 
+            /// The ANSI underline color sequence
             #[inline]
             pub const fn underline_escape(self) -> &'static str {
                 match self {
@@ -155,17 +178,26 @@ macro_rules! Css {
 
         $(
             impl $name {
+                /// The corrosponding variant of [`CssColor`]
                 pub const DYNAMIC: CssColor = CssColor::$name;
+                /// The corrosponding value of [`CssColor`]
                 pub const RGB: Rgb<$r, $g, $b> = Rgb;
 
+                /// The ANSI color code
                 pub const CODE: &'static str = Rgb::<$r, $g, $b>::CODE;
 
+                /// The ANSI foreground color arguments
                 pub const FOREGROUND_CODE: &'static str = Rgb::<$r, $g, $b>::FOREGROUND_CODE;
+                /// The ANSI background color arguments
                 pub const BACKGROUND_CODE: &'static str = Rgb::<$r, $g, $b>::BACKGROUND_CODE;
+                /// The ANSI underline color arguments
                 pub const UNDERLINE_CODE: &'static str = Rgb::<$r, $g, $b>::UNDERLINE_CODE;
 
+                /// The ANSI foreground color sequence
                 pub const FOREGROUND_ESCAPE: &'static str = Rgb::<$r, $g, $b>::FOREGROUND_ESCAPE;
+                /// The ANSI background color sequence
                 pub const BACKGROUND_ESCAPE: &'static str = Rgb::<$r, $g, $b>::BACKGROUND_ESCAPE;
+                /// The ANSI underline color sequence
                 pub const UNDERLINE_ESCAPE: &'static str = Rgb::<$r, $g, $b>::UNDERLINE_ESCAPE;
             }
 

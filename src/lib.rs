@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -15,21 +16,34 @@ mod style;
 mod value;
 pub mod xterm;
 
+/// A styled value, created from [`Colorize`] or [`StyledValue::new`]
 #[non_exhaustive]
 pub struct StyledValue<T, F = NoColor, B = NoColor, U = NoColor> {
+    /// The value to style
     pub value: T,
+    /// The style to use
     pub style: Style<F, B, U>,
+    /// The stream to use
     pub stream: Stream,
 }
 
+/// The stream to detect when to color on
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Stream {
-    Stdout,
-    Stderr,
-    Stdin,
+    /// Always color, used to pick the coloring mode at runtime for a particular value
+    ///
+    /// The default coloring mode for streams
+    #[default]
     AlwaysColor,
+    /// Never color, used to pick the coloring mode at runtime for a particular value
     NeverColor,
+    /// Detect via [`std::io::stdout`] if feature `std` is enabled
+    Stdout,
+    /// Detect via [`std::io::stderr`] if feature `std` is enabled
+    Stderr,
+    /// Detect via [`std::io::stdin`] if feature `std` is enabled
+    Stdin,
 }
 
 impl<T: ?Sized> Colorize for T {}
@@ -37,14 +51,20 @@ pub use value::Colorize;
 
 pub use style::{Effect, EffectFlags, EffectFlagsIter, Style};
 
+/// A no color placeholder type
 #[derive(Debug, Clone, Copy)]
 pub struct NoColor;
 
+/// A runtime color code
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color {
+    /// The ANSI color type (see [`ansi`] for details)
     Ansi(ansi::AnsiColor),
-    Css(css::CssColor),
+    /// The Xterm color type (see [`xterm`] for details)
     Xterm(xterm::XtermColor),
+    /// The CSS color type (see [`css`] for details)
+    Css(css::CssColor),
+    /// The Rgb color type (see [`rgb`] for details)
     Rgb(rgb::RgbColor),
 }
 

@@ -1,3 +1,23 @@
+//! Flags to control if any styling should occur
+//!
+//! There are three levels, in order of precedence
+//! * feature flags - compile time (`strip-colors`)
+//! * global - runtime [`set`], [`set_from_env`], [`replace`], [`replace_if_current_is`]
+//! * per value - runtime [`StyledValue::stream`]
+//!
+//! higher precedence options forces coloring or no-coloring even if lower precedence options
+//! specify otherwise.
+//!
+//! For example, using [`StyledValue::stream`] to [`Stream::AlwaysColor`] doesn't gurantee
+//! that any coloring will happen. For example, if the `strip-colors` feature flag is set
+//! or if `set(Mode::Never)` was called before.
+//!
+//! However, these flags only control coloring on [`StyledValue`], so using
+//! the color types directly to color values will always be supported (even with `strip-colors`).
+
+#[cfg(doc)]
+use crate::{Stream, StyledValue};
+
 use core::sync::atomic::{AtomicU8, Ordering};
 
 static MODE: AtomicU8 = AtomicU8::new(Mode::Detect as u8);
@@ -11,11 +31,15 @@ static STREAMS: [AtomicU8; 3] = [
     AtomicU8::new(STREAM_UNDETECTED),
 ];
 
+/// The coloring mode
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Mode {
+    /// use [`StyledValue::stream`] to pick when to color (by default always color if stream isn't specified)
     Detect,
+    /// Never color [`StyledValue`]
     Never,
+    /// Always color [`StyledValue`]
     Always,
 }
 
@@ -34,7 +58,7 @@ fn decode(mode: u8) -> Mode {
 
 #[cold]
 #[cfg(feature = "std")]
-pub fn detect_stream(stream: crate::Stream) -> bool {
+fn detect_stream(stream: crate::Stream) -> bool {
     use std::io::{stderr, stdin, stdout, IsTerminal};
 
     let output = match stream {
@@ -62,6 +86,7 @@ pub fn should_color(stream: crate::Stream) -> bool {
     false
 }
 
+/// Should you color for a given stream
 #[inline]
 #[cfg(not(feature = "strip-colors"))]
 pub fn should_color(stream: crate::Stream) -> bool {
@@ -92,6 +117,7 @@ fn should_color_slow(stream: crate::Stream) -> bool {
     }
 }
 
+/// Get the global coloring mode (default [`Mode::Detect`])
 pub fn get() -> Mode {
     if cfg!(feature = "strip-colors") {
         return Mode::Never;
@@ -100,6 +126,7 @@ pub fn get() -> Mode {
     decode(MODE.load(Ordering::Acquire))
 }
 
+/// Set the global coloring mode
 pub fn set(mode: Mode) {
     if cfg!(feature = "strip-colors") {
         return;
@@ -110,6 +137,11 @@ pub fn set(mode: Mode) {
 
 impl Mode {
     #[cfg(feature = "std")]
+    /// Get the coloring mode from the environment variables `NO_COLOR` and `ALWAYS_COLOR`
+    ///
+    /// if `NO_COLOR` is present, then pick [`Mode::Never`]
+    /// else if `ALWAYS_COLOR` is present, then pick [`Mode::Always`]
+    /// else pick [`Mode::Detect`]
     pub fn from_env() -> Mode {
         if cfg!(feature = "strip-colors") {
             return Mode::Never;
@@ -125,6 +157,12 @@ impl Mode {
     }
 }
 
+/// Set the coloring mode from the environment variables `NO_COLOR` and `ALWAYS_COLOR`
+///
+/// if `NO_COLOR` is present, then set [`Mode::Never`]
+/// else if `ALWAYS_COLOR` is present, then set [`Mode::Always`]
+///
+/// If neither are set, the global coloring mode isn't changed
 #[cfg(feature = "std")]
 pub fn set_from_env() {
     if cfg!(feature = "strip-colors") {
@@ -138,6 +176,7 @@ pub fn set_from_env() {
     }
 }
 
+/// Replace the global coloring mode
 pub fn replace(mode: Mode) -> Mode {
     if cfg!(feature = "strip-colors") {
         return Mode::Never;
@@ -146,6 +185,7 @@ pub fn replace(mode: Mode) -> Mode {
     decode(MODE.swap(mode as u8, Ordering::Release))
 }
 
+/// Replace the global coloring mode if it is currently at `current`
 pub fn replace_if_current_is(current: Mode, mode: Mode) -> Result<(), Mode> {
     if cfg!(feature = "strip-colors") {
         return Err(Mode::Never);

@@ -1,17 +1,31 @@
-use crate::AnsiColorCode;
+//! Basic ANSI color codes, which are widely supported on most terminals
 
-macro_rules! AnsiColor {
+use crate::AnsiColorCode;
+#[cfg(doc)]
+use crate::Color;
+
+macro_rules! MkAnsiColor {
     (
         $($name:ident $fg:literal $bg:literal)*
     ) => {
+        /// A runtime ANSI color type
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum AnsiColor {
-            $($name,)*
+            $(
+                #[doc = concat!("The runtime version of [`", stringify!($name), "`](self::", stringify!($name), ")")]
+                #[doc = concat!(" repesenting the color code ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
+                $name,
+            )*
         }
 
         const _: [(); core::mem::size_of::<AnsiColor>()] = [(); 1];
 
         $(
+            /// A compile time ANSI color type
+            #[doc = concat!(" repesenting the color code ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
+            ///
+            /// You can convert this type to [`AnsiColor`] via [`From`] or [`Self::DYNAMIC`]
+            /// and to [`Color`] or [`Option<Color>`] via [`From`]
             #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
             pub struct $name;
         )*
@@ -59,6 +73,7 @@ macro_rules! AnsiColor {
 
         impl AnsiColor {
             #[inline]
+            /// The ANSI foreground color code
             pub const fn foreground_code(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_CODE,)*
@@ -66,6 +81,7 @@ macro_rules! AnsiColor {
             }
 
             #[inline]
+            /// The ANSI background color code
             pub const fn background_code(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::BACKGROUND_CODE,)*
@@ -73,6 +89,7 @@ macro_rules! AnsiColor {
             }
 
             #[inline]
+            /// The ANSI foreground color escape sequence
             pub const fn foreground_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_ESCAPE,)*
@@ -80,6 +97,7 @@ macro_rules! AnsiColor {
             }
 
             #[inline]
+            /// The ANSI background color escape sequence
             pub const fn background_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::BACKGROUND_ESCAPE,)*
@@ -136,12 +154,17 @@ macro_rules! AnsiColor {
 
         $(
             impl $name {
+                /// The corrosponding variant on [`AnsiColor`]
                 pub const DYNAMIC: AnsiColor = AnsiColor::$name;
 
+                /// The ANSI foreground color arguments
                 pub const FOREGROUND_CODE: &'static str = stringify!($fg);
+                /// The ANSI background color arguments
                 pub const BACKGROUND_CODE: &'static str = stringify!($bg);
 
+                /// The ANSI foreground color escape sequence
                 pub const FOREGROUND_ESCAPE: &'static str = concat!("\x1b[", stringify!($fg) ,"m");
+                /// The ANSI background color escape sequence
                 pub const BACKGROUND_ESCAPE: &'static str = concat!("\x1b[", stringify!($bg) ,"m");
             }
 
@@ -196,7 +219,7 @@ macro_rules! AnsiColor {
     };
 }
 
-AnsiColor! {
+MkAnsiColor! {
     Black   30 40
     Red     31 41
     Green   32 42
