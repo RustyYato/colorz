@@ -2,6 +2,9 @@
 
 use crate::{ColorSpec, WriteColor};
 
+#[cfg(doc)]
+use crate::Color;
+
 /// An Rgb value for color
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RgbColor {

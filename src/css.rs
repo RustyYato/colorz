@@ -1,9 +1,13 @@
-//! CSS named colors. Not as widely supported as standard ANSI as it relies on 48bit color support.
+//! CSS named colors. Not as widely supported as standard ANSI as it relies on 48-bit color support.
 //!
-//! Reference: https://www.w3schools.com/cssref/css_colors.asp Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/color_value
+//! Reference: <https://www.w3schools.com/cssref/css_colors.asp>
+//! Reference: <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value>
 
 use crate::rgb::Rgb;
 use crate::ColorSpec;
+
+#[cfg(doc)]
+use crate::Color;
 
 macro_rules! Css {
     ($($name:ident ($r:literal, $g:literal, $b:literal))*) => {

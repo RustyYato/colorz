@@ -13,7 +13,7 @@ macro_rules! XTerm {
     ($d:tt $($args:tt $name:ident)*) => {
         /// A runtime Xterm color type
         ///
-        /// Can be converted from a u8 via [`From`] or [`from_args`](Self::from_args) based on the Xterm color args
+        /// Can be converted from a u8 via [`From`] or [`from_args`](Self::from_code) based on the Xterm color args
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum XtermColor {
             $(
