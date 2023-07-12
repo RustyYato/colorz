@@ -50,6 +50,9 @@ pub enum Color {
 pub trait AnsiColorCode {
     type Dynamic;
 
+    #[doc(hidden)]
+    const KIND: CodeKind = CodeKind::Unknown;
+
     fn into_dynamic(self) -> Self::Dynamic;
 
     fn code(&self) -> &'static str;
@@ -64,6 +67,12 @@ pub trait AnsiColorCode {
 }
 
 impl<C: AnsiColorCode> WriteColor for C {
+    #[doc(hidden)]
+    #[inline(always)]
+    fn code_kind(&self) -> CodeKind {
+        C::KIND
+    }
+
     fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.code())
     }
@@ -86,6 +95,12 @@ impl<C: AnsiColorCode> WriteColor for C {
 }
 
 pub trait WriteColor {
+    #[doc(hidden)]
+    #[inline(always)]
+    fn code_kind(&self) -> CodeKind {
+        CodeKind::Unknown
+    }
+
     fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
     fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
@@ -112,6 +127,17 @@ pub trait WriteColor {
 }
 
 impl WriteColor for Color {
+    #[doc(hidden)]
+    #[inline(always)]
+    fn code_kind(&self) -> CodeKind {
+        match self {
+            Color::Ansi(_) => CodeKind::Ansi,
+            Color::Css(_) => CodeKind::Rgb,
+            Color::Xterm(_) => CodeKind::Xterm,
+            Color::Rgb(_) => CodeKind::Rgb,
+        }
+    }
+
     fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_code(f),
@@ -188,6 +214,14 @@ pub enum Kind {
     NeverSome,
 }
 
+#[doc(hidden)]
+pub enum CodeKind {
+    Ansi,
+    Xterm,
+    Rgb,
+    Unknown,
+}
+
 pub trait OptionalColor {
     type Color: WriteColor;
 
@@ -197,23 +231,23 @@ pub trait OptionalColor {
     fn get(&self) -> Option<Self::Color>;
 }
 
-impl<C: WriteColor + Copy> OptionalColor for C {
+impl<C: WriteColor + Clone> OptionalColor for C {
     type Color = Self;
 
     const KIND: Kind = Kind::AlwaysSome;
 
     #[inline]
     fn get(&self) -> Option<Self::Color> {
-        Some(*self)
+        Some(self.clone())
     }
 }
 
-impl<C: WriteColor + Copy> OptionalColor for Option<C> {
-    type Color = C;
+impl<C: OptionalColor> OptionalColor for Option<C> {
+    type Color = C::Color;
 
     #[inline]
     fn get(&self) -> Option<Self::Color> {
-        *self
+        self.as_ref().and_then(C::get)
     }
 }
 

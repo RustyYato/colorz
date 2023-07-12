@@ -124,6 +124,9 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> RGB<RED, GREEN, BLUE> {
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for RGB<RED, GREEN, BLUE> {
     type Dynamic = Rgb;
 
+    #[doc(hidden)]
+    const KIND: crate::CodeKind = crate::CodeKind::Rgb;
+
     #[inline]
     fn into_dynamic(self) -> Self::Dynamic {
         Self::DYNAMIC

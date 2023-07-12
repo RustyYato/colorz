@@ -94,6 +94,9 @@ macro_rules! XTerm {
         impl AnsiColorCode for XtermColor {
             type Dynamic = Self;
 
+            #[doc(hidden)]
+            const KIND: crate::CodeKind = crate::CodeKind::Xterm;
+
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
                 self
@@ -141,6 +144,9 @@ macro_rules! XTerm {
 
             impl AnsiColorCode for $name {
                 type Dynamic = XtermColor;
+
+                #[doc(hidden)]
+                const KIND: crate::CodeKind = crate::CodeKind::Xterm;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {

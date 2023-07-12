@@ -64,6 +64,9 @@ macro_rules! Css {
         impl AnsiColorCode for CssColor {
             type Dynamic = Self;
 
+            #[doc(hidden)]
+            const KIND: crate::CodeKind = crate::CodeKind::Rgb;
+
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
                 self
@@ -111,6 +114,9 @@ macro_rules! Css {
 
             impl AnsiColorCode for $name {
                 type Dynamic = CssColor;
+
+                #[doc(hidden)]
+                const KIND: crate::CodeKind = crate::CodeKind::Rgb;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {

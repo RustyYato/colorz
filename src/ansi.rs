@@ -58,6 +58,9 @@ macro_rules! AnsiColor {
         impl AnsiColorCode for AnsiColor {
             type Dynamic = Self;
 
+            #[doc(hidden)]
+            const KIND: crate::CodeKind = crate::CodeKind::Ansi;
+
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
                 self
@@ -102,6 +105,9 @@ macro_rules! AnsiColor {
 
             impl AnsiColorCode for $name {
                 type Dynamic = AnsiColor;
+
+                #[doc(hidden)]
+                const KIND: crate::CodeKind = crate::CodeKind::Ansi;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {

@@ -414,6 +414,14 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     fn fmt_apply(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.effects.is_any(ANY_UNDERLINE) {
             if let Some(color) = self.underline_color.get() {
+                assert!(
+                    matches!(
+                        color.code_kind(),
+                        crate::CodeKind::Xterm | crate::CodeKind::Rgb
+                    ),
+                    "Cannot use background color with non-xterm or rgb color, tried to use with: {}",
+                    core::any::type_name::<U::Color>()
+                );
                 color.fmt_underline(f)?
             }
         }
