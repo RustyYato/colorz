@@ -16,6 +16,15 @@ macro_rules! AnsiColor {
             pub struct $name;
         )*
 
+        $(
+            impl From<$name> for AnsiColor {
+                #[inline(always)]
+                fn from(_: $name) -> Self {
+                    Self::$name
+                }
+            }
+        )*
+
         impl AnsiColor {
             #[inline]
             pub const fn foreground_code(self) -> &'static str {

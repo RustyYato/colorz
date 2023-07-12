@@ -14,31 +14,61 @@ macro_rules! XTerm {
 
         const _: [(); core::mem::size_of::<XtermColor>()] = [(); 1];
 
+        const _: () = {
+            $(assert!(XtermColor::$name as u8 == $code);)*
+        };
+
         $(
             #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
             pub struct $name;
         )*
 
+        impl From<u8> for XtermColor {
+            #[inline(always)]
+            fn from(code: u8) -> Self {
+                Self::from_code(code)
+            }
+        }
+
+        $(
+            impl From<$name> for XtermColor {
+                #[inline(always)]
+                fn from(_: $name) -> Self {
+                    Self::$name
+                }
+            }
+        )*
 
         impl XtermColor {
+            #[inline]
+            pub const fn from_code(code: u8) -> Self {
+                match code {
+                    $($code => Self::$name,)*
+                }
+            }
+
+            #[inline]
             pub const fn foreground_code(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_CODE,)*
                 }
             }
 
+            #[inline]
             pub const fn background_code(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::BACKGROUND_CODE,)*
                 }
             }
 
+            #[inline]
             pub const fn foreground_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_ESCAPE,)*
                 }
             }
 
+            #[inline]
             pub const fn background_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::BACKGROUND_ESCAPE,)*

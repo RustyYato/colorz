@@ -15,6 +15,15 @@ macro_rules! Css {
             pub struct $name;
         )*
 
+        $(
+
+            impl From<$name> for CssColor {
+                fn from(_: $name) -> Self {
+                    Self::$name
+                }
+            }
+        )*
+
         impl CssColor {
             #[inline]
             pub const fn foreground_code(self) -> &'static str {
