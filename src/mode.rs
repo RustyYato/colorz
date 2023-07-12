@@ -55,6 +55,13 @@ pub fn detect_stream(_stream: crate::Stream) -> bool {
     true
 }
 
+#[inline(always)]
+#[cfg(feature = "strip-colors")]
+pub fn should_color(stream: crate::Stream) -> bool {
+    false
+}
+
+#[cfg(not(feature = "strip-colors"))]
 pub fn should_color(stream: crate::Stream) -> bool {
     match get() {
         Mode::Detect => {

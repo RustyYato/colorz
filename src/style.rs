@@ -141,6 +141,11 @@ impl EffectFlags {
     pub const fn iter(self) -> StyleFlagsIter {
         StyleFlagsIter { data: self.data }
     }
+
+    #[inline(always)]
+    pub fn try_for_each<F: FnMut(Effect) -> Result<(), E>, E>(self, f: F) -> Result<(), E> {
+        self.iter().try_for_each(f)
+    }
 }
 
 impl Style<crate::NoColor, crate::NoColor> {
@@ -344,6 +349,29 @@ Effect! {
 
 impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     fn fmt_apply(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match (F::KIND, B::KIND) {
+            (_, crate::Kind::MaybeSome)
+            | (crate::Kind::MaybeSome, _)
+            | (crate::Kind::NeverSome, crate::Kind::NeverSome) => (),
+            (crate::Kind::AlwaysSome, crate::Kind::AlwaysSome) => {
+                // for now
+            }
+            (crate::Kind::AlwaysSome, crate::Kind::NeverSome) => {
+                if self.effects.is_plain() {
+                    if let Some(fg) = self.foreground.get() {
+                        return fg.fmt_foreground(f);
+                    }
+                }
+            }
+            (crate::Kind::NeverSome, crate::Kind::AlwaysSome) => {
+                if self.effects.is_plain() {
+                    if let Some(bg) = self.background.get() {
+                        return bg.fmt_background(f);
+                    }
+                }
+            }
+        }
+
         let mut semicolon = false;
         macro_rules! semi {
             () => {
@@ -368,11 +396,12 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
             bg.fmt_background_code(f)?;
         }
 
-        for effect in self.effects {
+        self.effects.try_for_each(|effect| {
             semi!();
             semicolon = true;
             f.write_str(effect.apply_code())?;
-        }
+            Ok(())
+        })?;
 
         if !self.is_plain() {
             f.write_str("m")?
@@ -382,6 +411,25 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     }
 
     fn fmt_clear(&self, f: &mut fmt::Formatter<'_>) -> core::fmt::Result {
+        match (F::KIND, B::KIND) {
+            (_, crate::Kind::MaybeSome)
+            | (crate::Kind::MaybeSome, _)
+            | (crate::Kind::NeverSome, crate::Kind::NeverSome) => (),
+            (crate::Kind::AlwaysSome, crate::Kind::AlwaysSome) => {
+                // for now
+            }
+            (crate::Kind::AlwaysSome, crate::Kind::NeverSome) => {
+                if self.effects.is_plain() {
+                    return ansi::Default.fmt_foreground(f);
+                }
+            }
+            (crate::Kind::NeverSome, crate::Kind::AlwaysSome) => {
+                if self.effects.is_plain() {
+                    return ansi::Default.fmt_background(f);
+                }
+            }
+        }
+
         let mut semicolon = false;
         macro_rules! semi {
             () => {
@@ -410,11 +458,12 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
             ansi::Default.fmt_background_code(f)?;
         }
 
-        for effect in self.effects {
+        self.effects.try_for_each(|effect| {
             semi!();
             semicolon = true;
-            f.write_str(effect.clear_code())?
-        }
+            f.write_str(effect.clear_code())?;
+            Ok(())
+        })?;
 
         if !self.is_plain() {
             f.write_str("m")?

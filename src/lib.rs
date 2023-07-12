@@ -145,14 +145,26 @@ impl WriteColor for core::convert::Infallible {
     }
 }
 
+#[doc(hidden)]
+pub enum Kind {
+    MaybeSome,
+    AlwaysSome,
+    NeverSome,
+}
+
 pub trait OptionalColor {
     type Color: WriteColor;
+
+    #[doc(hidden)]
+    const KIND: Kind = Kind::MaybeSome;
 
     fn get(&self) -> Option<Self::Color>;
 }
 
 impl<C: WriteColor + Copy> OptionalColor for C {
     type Color = Self;
+
+    const KIND: Kind = Kind::AlwaysSome;
 
     #[inline]
     fn get(&self) -> Option<Self::Color> {
@@ -172,6 +184,8 @@ impl<C: WriteColor + Copy> OptionalColor for Option<C> {
 impl OptionalColor for NoColor {
     type Color = core::convert::Infallible;
 
+    const KIND: Kind = Kind::NeverSome;
+
     #[inline]
     fn get(&self) -> Option<Self::Color> {
         None
@@ -182,6 +196,8 @@ struct Ref<'a, T: ?Sized>(&'a T);
 
 impl<T: ?Sized + OptionalColor> OptionalColor for Ref<'_, T> {
     type Color = T::Color;
+
+    const KIND: Kind = T::KIND;
 
     #[inline]
     fn get(&self) -> Option<Self::Color> {
