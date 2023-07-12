@@ -13,11 +13,8 @@ pub struct RgbColor {
     pub blue: u8,
 }
 
+impl crate::seal::Seal for RgbColor {}
 impl WriteColor for RgbColor {
-    fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "2;{};{};{}", self.red, self.green, self.blue)
-    }
-
     fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "38;2;{};{};{}", self.red, self.green, self.blue)
     }
@@ -156,11 +153,6 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for Rgb<RED, 
     #[inline]
     fn into_dynamic(self) -> Self::Dynamic {
         Self::DYNAMIC
-    }
-
-    #[inline]
-    fn code(&self) -> &'static str {
-        Self::CODE
     }
 
     #[inline]

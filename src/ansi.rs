@@ -118,11 +118,6 @@ macro_rules! MkAnsiColor {
             }
 
             #[inline]
-            fn code(&self) -> &'static str {
-                ""
-            }
-
-            #[inline]
             fn underline_code(&self) -> &'static str {
                 ""
             }
@@ -179,11 +174,6 @@ macro_rules! MkAnsiColor {
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
                     Self::DYNAMIC
-                }
-
-                #[inline]
-                fn code(&self) -> &'static str {
-                    (*self).foreground_code()
                 }
 
                 #[inline]

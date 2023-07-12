@@ -175,11 +175,6 @@ macro_rules! XTerm {
             }
 
             #[inline]
-            fn code(&self) -> &'static str {
-                (*self).code()
-            }
-
-            #[inline]
             fn foreground_code(&self) -> &'static str {
                 (*self).foreground_code()
             }
@@ -244,11 +239,6 @@ macro_rules! XTerm {
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
                     Self::DYNAMIC
-                }
-
-                #[inline]
-                fn code(&self) -> &'static str {
-                    Self::CODE
                 }
 
                 #[inline]

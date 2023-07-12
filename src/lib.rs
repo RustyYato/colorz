@@ -72,26 +72,33 @@ mod seal {
     pub trait Seal {}
 }
 
+/// A sealed trait for describing ANSI color codes
 pub trait AnsiColorCode: seal::Seal {
+    /// The runtime version of the color
     type Dynamic;
 
     #[doc(hidden)]
     const KIND: CodeKind = CodeKind::Unknown;
 
+    /// Covnert to the runtime version of the color
     fn into_dynamic(self) -> Self::Dynamic;
 
-    fn code(&self) -> &'static str;
-
+    /// The foreground color arguments
     fn foreground_code(&self) -> &'static str;
 
+    /// The background color arguments
     fn background_code(&self) -> &'static str;
 
+    /// The underline color arguments
     fn underline_code(&self) -> &'static str;
 
+    /// The foreground color sequence
     fn foreground_escape(&self) -> &'static str;
 
+    /// The background color sequence
     fn background_escape(&self) -> &'static str;
 
+    /// The underline color sequence
     fn underline_escape(&self) -> &'static str;
 }
 
@@ -100,10 +107,6 @@ impl<C: AnsiColorCode> WriteColor for C {
     #[inline(always)]
     fn code_kind(&self) -> CodeKind {
         C::KIND
-    }
-
-    fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str(self.code())
     }
 
     fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -131,40 +134,46 @@ impl<C: AnsiColorCode> WriteColor for C {
     }
 }
 
-pub trait WriteColor {
+/// A sealed trait for describing how to write ANSI color codes
+pub trait WriteColor: seal::Seal {
     #[doc(hidden)]
     #[inline(always)]
     fn code_kind(&self) -> CodeKind {
         CodeKind::Unknown
     }
 
-    fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
-
+    /// write the foreground color arguments
     fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
+    /// write the background color arguments
     fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
+    /// write the underline color arguments
     fn fmt_underline_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
+    /// write the foreground color sequence
     fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[")?;
         self.fmt_foreground_code(f)?;
         f.write_str("m")
     }
 
+    /// write the background color sequence
     fn fmt_background(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[")?;
         self.fmt_background_code(f)?;
         f.write_str("m")
     }
 
+    /// write the underline color sequence
     fn fmt_underline(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[58;")?;
-        self.fmt_code(f)?;
+        self.fmt_underline_code(f)?;
         f.write_str("m")
     }
 }
 
+impl seal::Seal for Color {}
 impl WriteColor for Color {
     #[doc(hidden)]
     #[inline(always)]
@@ -174,15 +183,6 @@ impl WriteColor for Color {
             Color::Css(_) => CodeKind::Rgb,
             Color::Xterm(_) => CodeKind::Xterm,
             Color::Rgb(_) => CodeKind::Rgb,
-        }
-    }
-
-    fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            Color::Ansi(color) => color.fmt_code(f),
-            Color::Css(color) => color.fmt_code(f),
-            Color::Xterm(color) => color.fmt_code(f),
-            Color::Rgb(color) => color.fmt_code(f),
         }
     }
 
@@ -241,11 +241,8 @@ impl WriteColor for Color {
     }
 }
 
+impl seal::Seal for core::convert::Infallible {}
 impl WriteColor for core::convert::Infallible {
-    fn fmt_code(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match *self {}
-    }
-
     fn fmt_foreground_code(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {}
     }
@@ -274,12 +271,15 @@ pub enum CodeKind {
     Unknown,
 }
 
+/// An optional color type
 pub trait OptionalColor {
+    /// The color type
     type Color: WriteColor;
 
     #[doc(hidden)]
     const KIND: Kind = Kind::MaybeSome;
 
+    /// Get the color value
     fn get(&self) -> Option<Self::Color>;
 }
 
@@ -327,7 +327,9 @@ impl<T: ?Sized + OptionalColor> OptionalColor for Ref<'_, T> {
     }
 }
 
+/// A compile time color value
 pub trait ComptimeColor {
+    /// The corrosponding [`Color`] value
     const VALUE: Option<Color>;
 }
 
