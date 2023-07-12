@@ -6,7 +6,7 @@
 use crate::AnsiColorCode;
 
 macro_rules! XTerm {
-    ($($code:tt $name:ident)*) => {
+    ($d:tt $($code:tt $name:ident)*) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum XtermColor {
             $($name,)*
@@ -26,6 +26,9 @@ macro_rules! XTerm {
         #[macro_export]
         macro_rules! xterm_from_code {
             $(($code) => { $crate::xterm::$name };)*
+            ($d t:tt) => {{
+                compile_error! { concat!("Invalid input, expected an unsuffixed u8 literal but got: ", stringify!($d t)) }
+            }};
         }
 
         impl From<u8> for XtermColor {
@@ -155,6 +158,7 @@ macro_rules! XTerm {
 }
 
 XTerm! {
+    $
     0 Black
     1 Red4
     2 ForestGreen
