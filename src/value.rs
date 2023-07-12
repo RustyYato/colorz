@@ -53,6 +53,14 @@ macro_rules! AnsiColorMethods {
                 self.into_style().on_color(color)
             }
 
+            fn underline_color<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, crate::NoColor, C> {
+                self.style().underline_color(color)
+            }
+
+            fn into_underline_color<C>(self, color: C) -> StyledValue<Self, crate::NoColor, crate::NoColor, C> where Self: Sized {
+                self.into_style().underline_color(color)
+            }
+
             $(fn $fun(&self) -> StyledValue<&Self, ansi::$color> {
                 self.style().$fun()
             })*
@@ -97,6 +105,7 @@ macro_rules! AnsiColorMethods {
                 }
             }
 
+            #[inline]
             pub fn underline_color<C>(self, color: C) -> StyledValue<T ,F, B, C> {
                 StyledValue {
                     value: self.value,
