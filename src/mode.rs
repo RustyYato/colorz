@@ -78,18 +78,34 @@ pub fn should_color(stream: crate::Stream) -> bool {
 }
 
 pub fn get() -> Mode {
+    if cfg!(feature = "strip-colors") {
+        return Mode::Never;
+    }
+
     decode(MODE.load(Ordering::Acquire))
 }
 
 pub fn set(mode: Mode) {
+    if cfg!(feature = "strip-colors") {
+        return;
+    }
+
     MODE.store(mode as u8, Ordering::Release);
 }
 
 pub fn replace(mode: Mode) -> Mode {
+    if cfg!(feature = "strip-colors") {
+        return Mode::Never;
+    }
+
     decode(MODE.swap(mode as u8, Ordering::Release))
 }
 
 pub fn replace_if_current_is(current: Mode, mode: Mode) -> Result<(), Mode> {
+    if cfg!(feature = "strip-colors") {
+        return Err(Mode::Never);
+    }
+
     MODE.compare_exchange(
         current as u8,
         mode as u8,

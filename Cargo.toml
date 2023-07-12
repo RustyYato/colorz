@@ -12,4 +12,6 @@ default = ['std']
 std = ['alloc']
 alloc = []
 
+strip-colors = []
+
 [dependencies]
