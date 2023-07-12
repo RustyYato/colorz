@@ -137,6 +137,7 @@ pub fn set(mode: Mode) {
 
 impl Mode {
     #[cfg(feature = "std")]
+    #[cfg_attr(doc, doc(cfg(feature = "std")))]
     /// Get the coloring mode from the environment variables `NO_COLOR` and `ALWAYS_COLOR`
     ///
     /// if `NO_COLOR` is present, then pick [`Mode::Never`]
@@ -164,6 +165,7 @@ impl Mode {
 ///
 /// If neither are set, the global coloring mode isn't changed
 #[cfg(feature = "std")]
+#[cfg_attr(doc, doc(cfg(feature = "std")))]
 pub fn set_from_env() {
     if cfg!(feature = "strip-colors") {
         return;
