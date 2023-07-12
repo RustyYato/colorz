@@ -13,7 +13,7 @@ fn test_foreground() {
         .foreground(colorize::Color::Ansi(colorize::ansi::AnsiColor::Blue))
         .dimmed();
 
-    assert_eq!(format!("{}", style.apply()), "\x1b[34;2m")
+    assert_eq!(format!("{}", style.apply()), "\x1b[2m\x1b[34m")
 }
 
 #[test]
@@ -22,7 +22,7 @@ fn test_background() {
         .background(colorize::Color::Ansi(colorize::ansi::AnsiColor::Blue))
         .dimmed();
 
-    assert_eq!(format!("{}", style.apply()), "\x1b[44;2m");
+    assert_eq!(format!("{}", style.apply()), "\x1b[2m\x1b[44m");
 }
 
 #[test]
@@ -43,22 +43,18 @@ fn test_partial() {
 
 #[test]
 fn test_rgb() {
-    let style = Style::new()
-        .background(colorize::Color::Rgb(colorize::rgb::Rgb {
-            red: 255,
-            green: 128,
-            blue: 0,
-        }))
-        .dimmed();
+    let style = Style::new().background(colorize::Color::Rgb(colorize::rgb::Rgb {
+        red: 255,
+        green: 128,
+        blue: 0,
+    }));
 
-    assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;0;2m");
+    assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;0m");
 }
 
 #[test]
 fn test_rgb_const() {
-    let style = Style::new()
-        .background(colorize::rgb::RGB::<255, 128, 0>)
-        .dimmed();
+    let style = Style::new().background(colorize::rgb::RGB::<255, 128, 0>);
 
-    assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;000;2m");
+    assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;000m");
 }
