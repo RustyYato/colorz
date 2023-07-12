@@ -38,12 +38,44 @@ macro_rules! XTerm {
             }
         }
 
+        impl From<XtermColor> for crate::Color {
+            #[inline(always)]
+            fn from(color: XtermColor) -> Self {
+                crate::Color::Xterm(color)
+            }
+        }
+
+        impl From<XtermColor> for Option<crate::Color> {
+            #[inline(always)]
+            fn from(color: XtermColor) -> Self {
+                Some(crate::Color::Xterm(color))
+            }
+        }
+
         $(
             impl From<$name> for XtermColor {
                 #[inline(always)]
                 fn from(_: $name) -> Self {
                     Self::$name
                 }
+            }
+
+            impl From<$name> for crate::Color {
+                #[inline(always)]
+                fn from(_: $name) -> Self {
+                    crate::Color::Xterm($name::DYNAMIC)
+                }
+            }
+
+            impl From<$name> for Option<crate::Color> {
+                #[inline(always)]
+                fn from(_: $name) -> Self {
+                    <$name as crate::ComptimeColor>::VALUE
+                }
+            }
+
+            impl crate::ComptimeColor for $name {
+                const VALUE: Option<crate::Color> = Some(crate::Color::Xterm(Self::DYNAMIC));
             }
         )*
 

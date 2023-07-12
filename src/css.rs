@@ -1,4 +1,4 @@
-use crate::rgb::RGB;
+use crate::rgb::Rgb;
 use crate::AnsiColorCode;
 
 macro_rules! Css {
@@ -15,12 +15,43 @@ macro_rules! Css {
             pub struct $name;
         )*
 
-        $(
+        impl From<CssColor> for crate::Color {
+            #[inline(always)]
+            fn from(color: CssColor) -> Self {
+                crate::Color::Css(color)
+            }
+        }
 
+        impl From<CssColor> for Option<crate::Color> {
+            #[inline(always)]
+            fn from(color: CssColor) -> Self {
+                Some(crate::Color::Css(color))
+            }
+        }
+
+        $(
             impl From<$name> for CssColor {
                 fn from(_: $name) -> Self {
                     Self::$name
                 }
+            }
+
+            impl From<$name> for crate::Color {
+                #[inline(always)]
+                fn from(_: $name) -> Self {
+                    crate::Color::Css($name::DYNAMIC)
+                }
+            }
+
+            impl From<$name> for Option<crate::Color> {
+                #[inline(always)]
+                fn from(_: $name) -> Self {
+                    <$name as crate::ComptimeColor>::VALUE
+                }
+            }
+
+            impl crate::ComptimeColor for $name {
+                const VALUE: Option<crate::Color> = Some(crate::Color::Css(Self::DYNAMIC));
             }
         )*
 
@@ -125,17 +156,17 @@ macro_rules! Css {
         $(
             impl $name {
                 pub const DYNAMIC: CssColor = CssColor::$name;
-                pub const RGB: RGB<$r, $g, $b> = RGB;
+                pub const RGB: Rgb<$r, $g, $b> = Rgb;
 
-                pub const CODE: &'static str = RGB::<$r, $g, $b>::CODE;
+                pub const CODE: &'static str = Rgb::<$r, $g, $b>::CODE;
 
-                pub const FOREGROUND_CODE: &'static str = RGB::<$r, $g, $b>::FOREGROUND_CODE;
-                pub const BACKGROUND_CODE: &'static str = RGB::<$r, $g, $b>::BACKGROUND_CODE;
-                pub const UNDERLINE_CODE: &'static str = RGB::<$r, $g, $b>::UNDERLINE_CODE;
+                pub const FOREGROUND_CODE: &'static str = Rgb::<$r, $g, $b>::FOREGROUND_CODE;
+                pub const BACKGROUND_CODE: &'static str = Rgb::<$r, $g, $b>::BACKGROUND_CODE;
+                pub const UNDERLINE_CODE: &'static str = Rgb::<$r, $g, $b>::UNDERLINE_CODE;
 
-                pub const FOREGROUND_ESCAPE: &'static str = RGB::<$r, $g, $b>::FOREGROUND_ESCAPE;
-                pub const BACKGROUND_ESCAPE: &'static str = RGB::<$r, $g, $b>::BACKGROUND_ESCAPE;
-                pub const UNDERLINE_ESCAPE: &'static str = RGB::<$r, $g, $b>::UNDERLINE_ESCAPE;
+                pub const FOREGROUND_ESCAPE: &'static str = Rgb::<$r, $g, $b>::FOREGROUND_ESCAPE;
+                pub const BACKGROUND_ESCAPE: &'static str = Rgb::<$r, $g, $b>::BACKGROUND_ESCAPE;
+                pub const UNDERLINE_ESCAPE: &'static str = Rgb::<$r, $g, $b>::UNDERLINE_ESCAPE;
             }
 
             impl AnsiColorCode for $name {

@@ -1,13 +1,13 @@
 use crate::{AnsiColorCode, WriteColor};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Rgb {
+pub struct RgbColor {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
 }
 
-impl WriteColor for Rgb {
+impl WriteColor for RgbColor {
     fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "2;{};{};{}", self.red, self.green, self.blue)
     }
@@ -104,10 +104,10 @@ const fn to_str(x: &[u8]) -> &str {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct RGB<const RED: u8, const GREEN: u8, const BLUE: u8>;
+pub struct Rgb<const RED: u8, const GREEN: u8, const BLUE: u8>;
 
-impl<const RED: u8, const GREEN: u8, const BLUE: u8> RGB<RED, GREEN, BLUE> {
-    pub const DYNAMIC: Rgb = Rgb {
+impl<const RED: u8, const GREEN: u8, const BLUE: u8> Rgb<RED, GREEN, BLUE> {
+    pub const DYNAMIC: RgbColor = RgbColor {
         red: RED,
         green: GREEN,
         blue: BLUE,
@@ -128,8 +128,8 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> RGB<RED, GREEN, BLUE> {
     pub const UNDERLINE_ESCAPE: &'static str = to_str(&escape(Self::UNDERLINE_CODE_DATA));
 }
 
-impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for RGB<RED, GREEN, BLUE> {
-    type Dynamic = Rgb;
+impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for Rgb<RED, GREEN, BLUE> {
+    type Dynamic = RgbColor;
 
     #[doc(hidden)]
     const KIND: crate::CodeKind = crate::CodeKind::Rgb;
@@ -173,4 +173,51 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for RGB<RED, 
     fn underline_escape(&self) -> &'static str {
         Self::UNDERLINE_ESCAPE
     }
+}
+
+impl From<RgbColor> for crate::Color {
+    #[inline(always)]
+    fn from(color: RgbColor) -> Self {
+        crate::Color::Rgb(color)
+    }
+}
+
+impl From<RgbColor> for Option<crate::Color> {
+    #[inline(always)]
+    fn from(color: RgbColor) -> Self {
+        Some(crate::Color::Rgb(color))
+    }
+}
+
+impl<const RED: u8, const GREEN: u8, const BLUE: u8> From<Rgb<RED, GREEN, BLUE>> for RgbColor {
+    #[inline(always)]
+    fn from(_: Rgb<RED, GREEN, BLUE>) -> Self {
+        RgbColor {
+            red: RED,
+            green: GREEN,
+            blue: BLUE,
+        }
+    }
+}
+
+impl<const RED: u8, const GREEN: u8, const BLUE: u8> From<Rgb<RED, GREEN, BLUE>> for crate::Color {
+    #[inline(always)]
+    fn from(color: Rgb<RED, GREEN, BLUE>) -> Self {
+        crate::Color::Rgb(color.into())
+    }
+}
+
+impl<const RED: u8, const GREEN: u8, const BLUE: u8> From<Rgb<RED, GREEN, BLUE>>
+    for Option<crate::Color>
+{
+    #[inline(always)]
+    fn from(color: Rgb<RED, GREEN, BLUE>) -> Self {
+        Some(color.into())
+    }
+}
+
+impl<const RED: u8, const GREEN: u8, const BLUE: u8> crate::ComptimeColor
+    for Rgb<RED, GREEN, BLUE>
+{
+    const VALUE: Option<crate::Color> = Some(crate::Color::Rgb(Self::DYNAMIC));
 }

@@ -43,7 +43,7 @@ fn test_partial() {
 
 #[test]
 fn test_rgb() {
-    let style = Style::new().background(colorize::Color::Rgb(colorize::rgb::Rgb {
+    let style = Style::new().background(colorize::Color::Rgb(colorize::rgb::RgbColor {
         red: 255,
         green: 128,
         blue: 0,
@@ -54,7 +54,7 @@ fn test_rgb() {
 
 #[test]
 fn test_rgb_const() {
-    let style = Style::new().background(colorize::rgb::RGB::<255, 128, 0>);
+    let style = Style::new().background(colorize::rgb::Rgb::<255, 128, 0>);
 
     assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;000m");
 }

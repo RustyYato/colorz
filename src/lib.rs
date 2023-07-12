@@ -44,7 +44,7 @@ pub enum Color {
     Ansi(ansi::AnsiColor),
     Css(css::CssColor),
     Xterm(xterm::XtermColor),
-    Rgb(rgb::Rgb),
+    Rgb(rgb::RgbColor),
 }
 
 pub trait AnsiColorCode {
@@ -300,4 +300,12 @@ impl<T: ?Sized + OptionalColor> OptionalColor for Ref<'_, T> {
     fn get(&self) -> Option<Self::Color> {
         self.0.get()
     }
+}
+
+pub trait ComptimeColor {
+    const VALUE: Option<Color>;
+}
+
+impl ComptimeColor for NoColor {
+    const VALUE: Option<Color> = None;
 }

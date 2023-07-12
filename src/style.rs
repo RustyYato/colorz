@@ -1,6 +1,6 @@
 use core::{fmt, num::NonZeroU16};
 
-use crate::{ansi, Color, OptionalColor, WriteColor};
+use crate::{ansi, Color, ComptimeColor, OptionalColor, WriteColor};
 
 #[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -258,9 +258,9 @@ impl<F, B, U> Style<F, B, U> {
     }
 }
 
-impl<F: Copy, B: Copy> Style<F, B> {
+impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
     #[inline(always)]
-    pub const fn const_foreground<T>(self, color: T) -> Style<T, B> {
+    pub const fn const_foreground<T>(self, color: T) -> Style<T, B, U> {
         Style {
             foreground: color,
             background: self.background,
@@ -270,7 +270,7 @@ impl<F: Copy, B: Copy> Style<F, B> {
     }
 
     #[inline(always)]
-    pub const fn const_background<T>(self, color: T) -> Style<F, T> {
+    pub const fn const_background<T>(self, color: T) -> Style<F, T, U> {
         Style {
             foreground: self.foreground,
             background: color,
@@ -285,6 +285,28 @@ impl<F: Copy, B: Copy> Style<F, B> {
             foreground: self.foreground,
             background: self.background,
             underline_color: color,
+            effects: self.effects,
+        }
+    }
+}
+
+impl<F: Into<Option<Color>>, B: Into<Option<Color>>, U: Into<Option<Color>>> Style<F, B, U> {
+    pub fn into_runtime_style(self) -> Style {
+        Style {
+            foreground: self.foreground.into(),
+            background: self.background.into(),
+            underline_color: self.underline_color.into(),
+            effects: self.effects,
+        }
+    }
+}
+
+impl<F: ComptimeColor + Copy, B: ComptimeColor + Copy, U: ComptimeColor + Copy> Style<F, B, U> {
+    pub const fn const_into_runtime_style(self) -> Style {
+        Style {
+            foreground: F::VALUE,
+            background: B::VALUE,
+            underline_color: U::VALUE,
             effects: self.effects,
         }
     }

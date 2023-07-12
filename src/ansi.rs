@@ -16,12 +16,44 @@ macro_rules! AnsiColor {
             pub struct $name;
         )*
 
+        impl From<AnsiColor> for crate::Color {
+            #[inline(always)]
+            fn from(color: AnsiColor) -> Self {
+                crate::Color::Ansi(color)
+            }
+        }
+
+        impl From<AnsiColor> for Option<crate::Color> {
+            #[inline(always)]
+            fn from(color: AnsiColor) -> Self {
+                Some(crate::Color::Ansi(color))
+            }
+        }
+
         $(
             impl From<$name> for AnsiColor {
                 #[inline(always)]
                 fn from(_: $name) -> Self {
                     Self::$name
                 }
+            }
+
+            impl From<$name> for crate::Color {
+                #[inline(always)]
+                fn from(_: $name) -> Self {
+                    crate::Color::Ansi($name::DYNAMIC)
+                }
+            }
+
+            impl From<$name> for Option<crate::Color> {
+                #[inline(always)]
+                fn from(_: $name) -> Self {
+                    <$name as crate::ComptimeColor>::VALUE
+                }
+            }
+
+            impl crate::ComptimeColor for $name {
+                const VALUE: Option<crate::Color> = Some(crate::Color::Ansi(Self::DYNAMIC));
             }
         )*
 
