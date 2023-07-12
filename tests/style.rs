@@ -58,3 +58,12 @@ fn test_rgb_const() {
 
     assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;000m");
 }
+
+#[test]
+fn test_rgb_to_runtime() {
+    let style = Style::new()
+        .background(colorize::rgb::Rgb::<255, 128, 0>)
+        .into_runtime_style();
+
+    assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;0m");
+}

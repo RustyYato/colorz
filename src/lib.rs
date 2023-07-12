@@ -309,3 +309,10 @@ pub trait ComptimeColor {
 impl ComptimeColor for NoColor {
     const VALUE: Option<Color> = None;
 }
+
+impl From<NoColor> for Option<Color> {
+    #[inline(always)]
+    fn from(_value: NoColor) -> Self {
+        None
+    }
+}
