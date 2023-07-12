@@ -61,6 +61,7 @@ pub fn should_color(stream: crate::Stream) -> bool {
     false
 }
 
+#[inline]
 #[cfg(not(feature = "strip-colors"))]
 pub fn should_color(stream: crate::Stream) -> bool {
     match get() {
@@ -71,16 +72,22 @@ pub fn should_color(stream: crate::Stream) -> bool {
                 _ => (),
             }
 
-            let stream_info = &STREAMS[stream as usize];
-            match stream_info.load(Ordering::Relaxed) {
-                self::STREAM_UNDETECTED => detect_stream(stream),
-                self::STREAM_NEVER => false,
-                self::STREAM_ALWAYS => true,
-                _ => unreachable!(),
-            }
+            should_color_slow(stream)
         }
         Mode::Never => false,
         Mode::Always => true,
+    }
+}
+
+#[cold]
+#[cfg(not(feature = "strip-colors"))]
+fn should_color_slow(stream: crate::Stream) -> bool {
+    let stream_info = &STREAMS[stream as usize];
+    match stream_info.load(Ordering::Relaxed) {
+        self::STREAM_UNDETECTED => detect_stream(stream),
+        self::STREAM_NEVER => false,
+        self::STREAM_ALWAYS => true,
+        _ => unreachable!(),
     }
 }
 
