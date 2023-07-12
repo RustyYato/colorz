@@ -24,11 +24,11 @@ pub struct StyledValue<T, F = NoColor, B = NoColor> {
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Stream {
-    AlwaysColor,
-    NeverColor,
     Stdout,
     Stderr,
     Stdin,
+    AlwaysColor,
+    NeverColor,
 }
 
 impl<T: ?Sized> Colorize for T {}

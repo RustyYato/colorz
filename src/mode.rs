@@ -5,9 +5,7 @@ static MODE: AtomicU8 = AtomicU8::new(Mode::Detect as u8);
 const STREAM_NEVER: u8 = 0;
 const STREAM_ALWAYS: u8 = 1;
 const STREAM_UNDETECTED: u8 = 2;
-static STREAMS: [AtomicU8; 5] = [
-    AtomicU8::new(STREAM_ALWAYS),
-    AtomicU8::new(STREAM_NEVER),
+static STREAMS: [AtomicU8; 3] = [
     AtomicU8::new(STREAM_UNDETECTED),
     AtomicU8::new(STREAM_UNDETECTED),
     AtomicU8::new(STREAM_UNDETECTED),
@@ -60,6 +58,12 @@ pub fn detect_stream(_stream: crate::Stream) -> bool {
 pub fn should_color(stream: crate::Stream) -> bool {
     match get() {
         Mode::Detect => {
+            match stream {
+                crate::Stream::AlwaysColor => return true,
+                crate::Stream::NeverColor => return false,
+                _ => (),
+            }
+
             let stream_info = &STREAMS[stream as usize];
             match stream_info.load(Ordering::Relaxed) {
                 self::STREAM_UNDETECTED => detect_stream(stream),
