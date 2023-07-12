@@ -2,28 +2,58 @@ use core::{fmt, num::NonZeroU16};
 
 use crate::{ansi, Color, ComptimeColor, OptionalColor, WriteColor};
 
+/// A generic style format, this specifies the colors of the foreground, background, underline,
+/// and what effects the text should have (bold, italics, etc.)
+///
+/// This type can be constructed via the various builder methods ([`foreground`](Self::foreground), [`bold`](Self::bold), etc.)
+///
+/// ```
+/// use colorize::{Colorize, Style, ansi};
+///
+/// let style = Style::new().fg(ansi::Red).bg(ansi::Yellow).bold();
+///
+/// let x = "hello world".style_with(style);
+/// ```
+///
+/// Then the style can be converted to a common [`Style`] type via [`Style::into_runtime_style`]
+///
+///
+/// ```
+/// # use colorize::{Colorize, Style, ansi};
+/// # let style = Style::new().fg(ansi::Red).bg(ansi::Yellow).bold();
+/// let style = style.into_runtime_style();
+///
+/// let x = "hello world".style_with(style);
+/// ```
+///
 #[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Style<F = Option<Color>, B = Option<Color>, U = Option<Color>> {
+    /// The foreground color
     pub foreground: F,
+    /// The background color
     pub background: B,
+    /// The underline color
     pub underline_color: U,
+    /// The various effects (like bold, italics, etc.)
     pub effects: EffectFlags,
 }
 
 const _: [(); core::mem::size_of::<Style>()] = [(); 14];
 
+/// A collection of [`Effect`]s
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EffectFlags {
     data: u16,
 }
 
 macro_rules! Effect {
-    ($($name:ident $apply:literal $clear:literal -> $set_func:ident,)*) => {
+    ($($(#[$meta:meta])* $name:ident $apply:literal $clear:literal -> $set_func:ident,)*) => {
+        /// An effect that can be applied to values
         #[repr(u8)]
         #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         pub enum Effect {
-            $($name,)*
+            $($(#[$meta])* $name,)*
         }
 
         #[allow(non_upper_case_globals)]
@@ -50,6 +80,11 @@ macro_rules! Effect {
         mod disable_escape {
             $(pub const $name: &str = concat!("\x1b[", stringify!($clear), "m");)*
         }
+
+        const _: () = {
+            let effects = EffectFlags::all();
+            $(assert!(effects.is(Effect::$name));)*
+        };
 
         impl Effect {
             fn decode(x: u8) -> Self {
@@ -99,6 +134,7 @@ macro_rules! Effect {
         }
 
         impl<F, B, U> Style<F, B, U> {$(
+            $(#[$meta])*
             #[inline(always)]
             pub fn $set_func(self) -> Self {
                 self.with(Effect::$name)
@@ -108,16 +144,19 @@ macro_rules! Effect {
 }
 
 impl EffectFlags {
+    /// Create an empty set of effects
     #[inline(always)]
     pub const fn new() -> Self {
         Self { data: 0 }
     }
 
+    /// Create a set of all effects
     #[inline(always)]
     pub const fn all() -> Self {
-        Self { data: 0x1ff }
+        Self { data: 0x1fff }
     }
 
+    /// Create a set of effects from an array
     #[inline(always)]
     pub const fn from_array<const N: usize>(effects: [Effect; N]) -> Self {
         let mut e = EffectFlags::new();
@@ -131,21 +170,26 @@ impl EffectFlags {
         e
     }
 
+    /// Are there no effects
     #[inline(always)]
     pub const fn is_plain(self) -> bool {
         self.data == 0
     }
 
+    /// Is this effect in the collection
     #[inline(always)]
     pub const fn is(self, opt: Effect) -> bool {
         self.data & opt.mask() != 0
     }
 
+    /// Do these two collections intersect
     #[inline(always)]
     pub const fn is_any(self, opt: EffectFlags) -> bool {
         self.data & opt.data != 0
     }
 
+    /// Add an effect to the set
+    #[must_use = "EffectFlags::with returns a new instance without modifying the original"]
     #[inline(always)]
     pub const fn with(self, opt: Effect) -> Self {
         Self {
@@ -153,6 +197,8 @@ impl EffectFlags {
         }
     }
 
+    /// Remove an effect from the set
+    #[must_use = "EffectFlags::without returns a new instance without modifying the original"]
     #[inline(always)]
     pub const fn without(self, opt: Effect) -> Self {
         Self {
@@ -160,6 +206,8 @@ impl EffectFlags {
         }
     }
 
+    /// Toggle an effect in the set
+    #[must_use = "EffectFlags::toggled returns a new instance without modifying the original"]
     #[inline(always)]
     pub const fn toggled(self, opt: Effect) -> Self {
         Self {
@@ -167,33 +215,38 @@ impl EffectFlags {
         }
     }
 
+    /// Add an effect to the set in place
     #[inline(always)]
     pub fn set(&mut self, opt: Effect) {
         *self = self.with(opt)
     }
 
+    /// Remove an effect from the set in place
     #[inline(always)]
     pub fn unset(&mut self, opt: Effect) {
         *self = self.without(opt)
     }
 
+    /// Toggle an effect in the set in place
     #[inline(always)]
     pub fn toggle(&mut self, opt: Effect) {
         *self = self.toggled(opt)
     }
 
+    /// Iterate over all effects
     #[inline]
     pub const fn iter(self) -> EffectFlagsIter {
         EffectFlagsIter { data: self.data }
     }
 
     #[inline(always)]
-    pub fn try_for_each<F: FnMut(Effect) -> Result<(), E>, E>(self, f: F) -> Result<(), E> {
+    fn try_for_each<F: FnMut(Effect) -> Result<(), E>, E>(self, f: F) -> Result<(), E> {
         self.iter().try_for_each(f)
     }
 }
 
 impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
+    /// Create a new style
     #[inline(always)]
     pub const fn new() -> Self {
         Self {
@@ -208,6 +261,7 @@ impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
         f.write_str("\x1b[0m")
     }
 
+    /// Clear a styling
     pub fn clear_all() -> impl core::fmt::Display + core::fmt::Debug {
         struct ClearAll;
 
@@ -230,8 +284,9 @@ impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
 }
 
 impl<F, B, U> Style<F, B, U> {
+    /// Set the foreground color
     #[inline(always)]
-    pub fn foreground<T>(self, color: T) -> Style<T, B, U> {
+    pub fn fg<T>(self, color: T) -> Style<T, B, U> {
         Style {
             foreground: color,
             background: self.background,
@@ -240,8 +295,9 @@ impl<F, B, U> Style<F, B, U> {
         }
     }
 
+    /// Set the background color
     #[inline(always)]
-    pub fn background<T>(self, color: T) -> Style<F, T, U> {
+    pub fn bg<T>(self, color: T) -> Style<F, T, U> {
         Style {
             foreground: self.foreground,
             background: color,
@@ -250,6 +306,7 @@ impl<F, B, U> Style<F, B, U> {
         }
     }
 
+    /// Set the underline color
     #[inline(always)]
     pub fn underline_color<T>(self, color: T) -> Style<F, B, T> {
         Style {
@@ -272,8 +329,9 @@ impl<F, B, U> Style<F, B, U> {
 }
 
 impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
+    /// Set the foreground color
     #[inline(always)]
-    pub const fn const_foreground<T>(self, color: T) -> Style<T, B, U> {
+    pub const fn const_fg<T>(self, color: T) -> Style<T, B, U> {
         Style {
             foreground: color,
             background: self.background,
@@ -282,8 +340,9 @@ impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
         }
     }
 
+    /// Set the background color
     #[inline(always)]
-    pub const fn const_background<T>(self, color: T) -> Style<F, T, U> {
+    pub const fn const_bg<T>(self, color: T) -> Style<F, T, U> {
         Style {
             foreground: self.foreground,
             background: color,
@@ -292,6 +351,7 @@ impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
         }
     }
 
+    /// Set the underline color
     #[inline(always)]
     pub fn const_underline_color<T>(self, color: T) -> Style<F, B, T> {
         Style {
@@ -436,18 +496,121 @@ impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
 }
 
 Effect! {
+    /// Makes the value bolded
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".bold());
+    /// ```
     Bold 1 22 -> bold,
+
+    /// Makes the value faint
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".dimmed());
+    /// ```
     Dimmed 2 22 -> dimmed,
+
+    /// Makes the value italics
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".italics());
+    /// ```
     Italic 3 23 -> italics,
+
+    /// Makes the value underlined
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".underline());
+    /// ```
     Underline 4 24 -> underline,
+
+    /// Makes the value double underlined
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".double_underline());
+    /// ```
     DoubleUnderline 21 24 -> double_underline,
+
+    /// Makes the value blink
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".blink());
+    /// ```
     Blink 5 25 -> blink,
+
+    /// Makes the value blink fast
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".blink_fast());
+    /// ```
     BlinkFast 6 25 -> blink_fast,
+
+    /// Makes the value reversed
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".reverse());
+    /// ```
     Reversed 7 27 -> reverse,
+
+    /// Makes the value hidden
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".hide());
+    /// ```
     Hidden 8 28 -> hide,
+
+    /// Applies a strikethrough to the value
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".strikethrough());
+    /// ```
     Strikethrough 9 29 -> strikethrough,
+
+    /// Applies an overline to the value
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".overline());
+    /// ```
     Overline 53 55 -> overline,
+
+    /// Makes the value a superscript
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".superscript());
+    /// ```
     SuperScript 73 75 -> superscript,
+
+    /// Makes the value a subscript
+    ///
+    /// ```
+    /// use colorize::Colorize;
+    ///
+    /// println!("{}", "hello world".subscript());
+    /// ```
     SubScript 73 75 -> subscript,
 }
 

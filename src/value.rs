@@ -128,7 +128,7 @@ macro_rules! AnsiColorMethods {
             pub fn color<C>(self, color: C) -> StyledValue<T, C, B, U> {
                 StyledValue {
                     value: self.value,
-                    style: self.style.foreground(color),
+                    style: self.style.fg(color),
                     stream: self.stream,
                 }
             }
@@ -137,7 +137,7 @@ macro_rules! AnsiColorMethods {
             pub fn on_color<C>(self, color: C) -> StyledValue<T, F, C, U> {
                 StyledValue {
                     value: self.value,
-                    style: self.style.background(color),
+                    style: self.style.bg(color),
                     stream: self.stream,
                 }
             }
@@ -152,19 +152,11 @@ macro_rules! AnsiColorMethods {
             }
 
             $(#[inline] pub fn $fun(self) -> StyledValue<T, ansi::$color, B, U> {
-                StyledValue {
-                    value: self.value,
-                    style: self.style.foreground(ansi::$color),
-                    stream: self.stream,
-                }
+                self.color(ansi::$color)
             })*
 
             $(#[inline] pub fn $on_fun(self) -> StyledValue<T, F, ansi::$color, U> {
-                StyledValue {
-                    value: self.value,
-                    style: self.style.background(ansi::$color),
-                    stream: self.stream,
-                }
+                self.on_color(ansi::$color)
             })*
 
             $(#[inline] pub fn $effect_fun(self) -> StyledValue<T, F, B, U> {

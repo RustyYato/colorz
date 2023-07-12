@@ -76,7 +76,7 @@ Create compile time style sheets
 use colorize::{Colorize, Style, Effect, xterm};
 
 const MY_STYLE: Style = Style::new()
-    .const_foreground(xterm::ForestGreen)
+    .const_fg(xterm::ForestGreen)
     .const_effects([Effect::Italic, Effect::Bold])
     .const_into_runtime_style();
 

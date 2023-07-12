@@ -33,6 +33,12 @@ pub struct StyledValue<T, F = NoColor, B = NoColor, U = NoColor> {
 #[non_exhaustive]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Stream {
+    /// Detect via [`std::io::stdout`] if feature `std` is enabled
+    Stdout,
+    /// Detect via [`std::io::stderr`] if feature `std` is enabled
+    Stderr,
+    /// Detect via [`std::io::stdin`] if feature `std` is enabled
+    Stdin,
     /// Always color, used to pick the coloring mode at runtime for a particular value
     ///
     /// The default coloring mode for streams
@@ -40,12 +46,6 @@ pub enum Stream {
     AlwaysColor,
     /// Never color, used to pick the coloring mode at runtime for a particular value
     NeverColor,
-    /// Detect via [`std::io::stdout`] if feature `std` is enabled
-    Stdout,
-    /// Detect via [`std::io::stderr`] if feature `std` is enabled
-    Stderr,
-    /// Detect via [`std::io::stdin`] if feature `std` is enabled
-    Stdin,
 }
 
 impl<T: ?Sized> Colorize for T {}
@@ -71,7 +71,7 @@ pub enum Color {
 }
 
 mod seal {
-    pub trait Seal {}
+    pub trait Seal: Copy {}
 }
 
 /// A sealed trait for describing ANSI color args
@@ -240,7 +240,7 @@ pub enum Kind {
 }
 
 /// An optional color type
-pub trait OptionalColor {
+pub trait OptionalColor: seal::Seal {
     /// The color type
     type Color: WriteColor;
 
@@ -262,6 +262,7 @@ impl<C: WriteColor + Clone> OptionalColor for C {
     }
 }
 
+impl<C: seal::Seal> seal::Seal for Option<C> {}
 impl<C: OptionalColor> OptionalColor for Option<C> {
     type Color = C::Color;
 
@@ -271,6 +272,7 @@ impl<C: OptionalColor> OptionalColor for Option<C> {
     }
 }
 
+impl seal::Seal for NoColor {}
 impl OptionalColor for NoColor {
     type Color = core::convert::Infallible;
 
@@ -284,6 +286,14 @@ impl OptionalColor for NoColor {
 
 struct Ref<'a, T: ?Sized>(&'a T);
 
+impl<T: ?Sized> Copy for Ref<'_, T> {}
+impl<T: ?Sized> Clone for Ref<'_, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T: ?Sized> seal::Seal for Ref<'_, T> {}
 impl<T: ?Sized + OptionalColor> OptionalColor for Ref<'_, T> {
     type Color = T::Color;
 
