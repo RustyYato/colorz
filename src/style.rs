@@ -26,6 +26,7 @@ use crate::{ansi, Color, ComptimeColor, OptionalColor, WriteColor};
 /// let x = "hello world".style_with(style);
 /// ```
 #[non_exhaustive]
+#[must_use = "A `Style` value doesn't do anything on it's own"]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Style<F = Option<Color>, B = Option<Color>, U = Option<Color>> {
     /// The foreground color
@@ -316,6 +317,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
         }
     }
 
+    /// Does this style apply any colors or effects
     #[inline(always)]
     pub fn is_plain(&self) -> bool {
         self.effects.is_plain()
@@ -323,18 +325,13 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             && self.background.get().is_none()
     }
 
-    #[inline(always)]
-    pub fn is_complete(&self) -> bool {
-        self.effects == EffectFlags::all()
-            && self.foreground.get().is_some()
-            && self.background.get().is_some()
-    }
-
+    /// Does this style use the effect
     #[inline(always)]
     pub const fn is(&self, opt: Effect) -> bool {
         self.effects.is(opt)
     }
 
+    /// Set which effects are used
     #[inline(always)]
     pub fn effects<I: IntoIterator>(self, flags: I) -> Self
     where
@@ -346,6 +343,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
         }
     }
 
+    /// Set which effects are used
     #[inline(always)]
     pub const fn effects_array<const N: usize>(self, effects: [Effect; N]) -> Self {
         Style {
@@ -354,16 +352,19 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
         }
     }
 
+    /// Set which effects are used
     #[inline(always)]
     pub const fn effect_flags(self, effects: EffectFlags) -> Self {
         Style { effects, ..self }
     }
 
+    /// Clear all effects
     #[inline(always)]
     pub const fn clear_effects(self) -> Self {
         self.effect_flags(EffectFlags::new())
     }
 
+    /// Add the given effect
     #[inline(always)]
     pub const fn with(self, opt: Effect) -> Self {
         Style {
@@ -372,6 +373,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
         }
     }
 
+    /// Remove the given effect
     #[inline(always)]
     pub const fn without(self, opt: Effect) -> Self {
         Style {
@@ -380,6 +382,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
         }
     }
 
+    /// Toggle the effect
     #[inline(always)]
     pub const fn toggled(self, opt: Effect) -> Self {
         Style {
@@ -390,6 +393,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 }
 
 impl<F: Into<Option<Color>>, B: Into<Option<Color>>, U: Into<Option<Color>>> Style<F, B, U> {
+    /// Convert to a type-erased style
     pub fn into_runtime_style(self) -> Style {
         Style {
             foreground: self.foreground.into(),
@@ -400,7 +404,8 @@ impl<F: Into<Option<Color>>, B: Into<Option<Color>>, U: Into<Option<Color>>> Sty
     }
 }
 
-impl<F: ComptimeColor + Copy, B: ComptimeColor + Copy, U: ComptimeColor + Copy> Style<F, B, U> {
+impl<F: ComptimeColor, B: ComptimeColor, U: ComptimeColor> Style<F, B, U> {
+    /// Convert to a type-erased style
     pub const fn const_into_runtime_style(self) -> Style {
         Style {
             foreground: F::VALUE,
@@ -696,10 +701,6 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             };
         }
 
-        if self.is_complete() {
-            return Style::fmt_clear_all(f);
-        }
-
         if !self.is_plain() {
             f.write_str("\x1b[")?
         }
@@ -731,6 +732,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
         Ok(())
     }
 
+    /// Writes the ANSI color and effect codes
     pub fn apply(self) -> impl core::fmt::Display + core::fmt::Debug {
         struct Prefix<F, B, U> {
             style: Style<F, B, U>,
@@ -753,6 +755,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
         Prefix { style: self }
     }
 
+    /// Writes the ANSI color and effect clear codes (reverses whatever [`apply`](Self::apply) did)
     pub fn clear(self) -> impl core::fmt::Display + core::fmt::Debug {
         struct Suffix<F, B, U> {
             style: Style<F, B, U>,
@@ -776,6 +779,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     }
 }
 
+/// An iterator for teh [`EffectFlags`] type, which yields [`Effect`]s
 pub struct EffectFlagsIter {
     data: u16,
 }

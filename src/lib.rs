@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 #![forbid(unsafe_code)]
-// #![warn(missing_docs)]
+#![warn(missing_docs)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -285,7 +285,7 @@ impl OptionalColor for NoColor {
 }
 
 /// A compile time color value
-pub trait ComptimeColor {
+pub trait ComptimeColor: seal::Seal {
     /// The corrosponding [`Color`] value
     const VALUE: Option<Color>;
 }
