@@ -147,9 +147,6 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> crate::seal::Seal for Rgb<R
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> ColorSpec for Rgb<RED, GREEN, BLUE> {
     type Dynamic = RgbColor;
 
-    #[doc(hidden)]
-    const KIND: crate::ArgsKind = crate::ArgsKind::Rgb;
-
     #[inline]
     fn into_dynamic(self) -> Self::Dynamic {
         Self::DYNAMIC

@@ -6,7 +6,7 @@ use crate::ColorSpec;
 
 macro_rules! MkAnsiColor {
     (
-        $($name:ident $fg:literal $bg:literal)*
+        $($xterm:tt $name:ident $fg:literal $bg:literal)*
     ) => {
         /// A runtime ANSI color type
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -89,6 +89,12 @@ macro_rules! MkAnsiColor {
             }
 
             #[inline]
+            /// The ANSI background color args
+            pub const fn underline_args(self) -> &'static str {
+                self.to_xterm().underline_args()
+            }
+
+            #[inline]
             /// The ANSI foreground color escape sequence
             pub const fn foreground_escape(self) -> &'static str {
                 match self {
@@ -103,14 +109,32 @@ macro_rules! MkAnsiColor {
                     $(Self::$name => $name::BACKGROUND_ESCAPE,)*
                 }
             }
+
+            #[inline]
+            /// The ANSI underline color escape sequence
+            pub const fn underline_escape(self) -> &'static str {
+                self.to_xterm().underline_escape()
+            }
+
+            #[inline]
+            /// The corropsonding Xterm color
+            pub const fn to_xterm(self) -> crate::xterm::XtermColor {
+                match self {
+                    $(Self::$name => $name::DYNAMIC_XTERM,)*
+                }
+            }
+        }
+
+        impl From<AnsiColor> for crate::xterm::XtermColor {
+            #[inline]
+            fn from(color: AnsiColor) -> Self {
+                color.to_xterm()
+            }
         }
 
         impl crate::seal::Seal for AnsiColor {}
         impl ColorSpec for AnsiColor {
             type Dynamic = Self;
-
-            #[doc(hidden)]
-            const KIND: crate::ArgsKind = crate::ArgsKind::Ansi;
 
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
@@ -119,7 +143,7 @@ macro_rules! MkAnsiColor {
 
             #[inline]
             fn underline_args(&self) -> &'static str {
-                ""
+                self.to_xterm().underline_args()
             }
 
             #[inline]
@@ -144,7 +168,7 @@ macro_rules! MkAnsiColor {
 
             #[inline]
             fn underline_escape(&self) -> &'static str {
-                ""
+                self.to_xterm().underline_escape()
             }
         }
 
@@ -152,6 +176,10 @@ macro_rules! MkAnsiColor {
             impl $name {
                 /// The corrosponding variant on [`AnsiColor`]
                 pub const DYNAMIC: AnsiColor = AnsiColor::$name;
+                /// The corrosponding [Xterm](crate::xterm) color
+                pub const XTERM: xterm_from_code!($xterm) = xterm_from_code!($xterm);
+                /// The corrosponding [`XtermColor`](crate::xterm::XtermColor) color
+                pub const DYNAMIC_XTERM: crate::xterm::XtermColor = crate::xterm::XtermColor::from_code($xterm);
 
                 /// The ANSI foreground color arguments
                 pub const FOREGROUND_ARGS: &'static str = stringify!($fg);
@@ -167,9 +195,6 @@ macro_rules! MkAnsiColor {
             impl crate::seal::Seal for $name {}
             impl ColorSpec for $name {
                 type Dynamic = AnsiColor;
-
-                #[doc(hidden)]
-                const KIND: crate::ArgsKind = crate::ArgsKind::Ansi;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
@@ -188,7 +213,7 @@ macro_rules! MkAnsiColor {
 
                 #[inline]
                 fn underline_args(&self) -> &'static str {
-                    ""
+                    <xterm_from_code!($xterm)>::UNDERLINE_ARGS
                 }
 
                 #[inline]
@@ -203,7 +228,7 @@ macro_rules! MkAnsiColor {
 
                 #[inline]
                 fn underline_escape(&self) -> &'static str {
-                    ""
+                    <xterm_from_code!($xterm)>::UNDERLINE_ESCAPE
                 }
             }
         )*
@@ -212,22 +237,22 @@ macro_rules! MkAnsiColor {
 }
 
 MkAnsiColor! {
-    Black   30 40
-    Red     31 41
-    Green   32 42
-    Yellow  33 43
-    Blue    34 44
-    Magenta 35 45
-    Cyan    36 46
-    White   37 47
-    Default   39 49
+    0 Black   30 40
+    1 Red     31 41
+    2 Green   32 42
+    3 Yellow  33 43
+    4 Blue    34 44
+    5 Magenta 35 45
+    6 Cyan    36 46
+    7 White   37 47
+    0 Default   39 49
 
-    BrightBlack   90 100
-    BrightRed     91 101
-    BrightGreen   92 102
-    BrightYellow  93 103
-    BrightBlue    94 104
-    BrightMagenta 95 105
-    BrightCyan    96 106
-    BrightWhite   97 107
+    8 BrightBlack   90 100
+    9 BrightRed     91 101
+    10 BrightGreen   92 102
+    11 BrightYellow  93 103
+    12 BrightBlue    94 104
+    13 BrightMagenta 95 105
+    14 BrightCyan    96 106
+    15 BrightWhite   97 107
 }

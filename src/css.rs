@@ -131,9 +131,6 @@ macro_rules! Css {
         impl ColorSpec for CssColor {
             type Dynamic = Self;
 
-            #[doc(hidden)]
-            const KIND: crate::ArgsKind = crate::ArgsKind::Rgb;
-
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
                 self
@@ -198,9 +195,6 @@ macro_rules! Css {
             impl crate::seal::Seal for $name {}
             impl ColorSpec for $name {
                 type Dynamic = CssColor;
-
-                #[doc(hidden)]
-                const KIND: crate::ArgsKind = crate::ArgsKind::Rgb;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {

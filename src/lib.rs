@@ -8,13 +8,15 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+#[macro_use]
+pub mod xterm;
+
 pub mod ansi;
 pub mod css;
 pub mod mode;
 pub mod rgb;
 mod style;
 mod value;
-pub mod xterm;
 
 /// A styled value, created from [`Colorize`] or [`StyledValue::new`]
 #[non_exhaustive]
@@ -77,9 +79,6 @@ pub trait ColorSpec: seal::Seal {
     /// The runtime version of the color
     type Dynamic;
 
-    #[doc(hidden)]
-    const KIND: ArgsKind = ArgsKind::Unknown;
-
     /// Covnert to the runtime version of the color
     fn into_dynamic(self) -> Self::Dynamic;
 
@@ -103,12 +102,6 @@ pub trait ColorSpec: seal::Seal {
 }
 
 impl<C: ColorSpec> WriteColor for C {
-    #[doc(hidden)]
-    #[inline(always)]
-    fn args_kind(&self) -> ArgsKind {
-        C::KIND
-    }
-
     fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.foreground_args())
     }
@@ -136,12 +129,6 @@ impl<C: ColorSpec> WriteColor for C {
 
 /// A sealed trait for describing how to write ANSI color args
 pub trait WriteColor: seal::Seal {
-    #[doc(hidden)]
-    #[inline(always)]
-    fn args_kind(&self) -> ArgsKind {
-        ArgsKind::Unknown
-    }
-
     /// write the foreground color arguments
     fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
@@ -175,17 +162,6 @@ pub trait WriteColor: seal::Seal {
 
 impl seal::Seal for Color {}
 impl WriteColor for Color {
-    #[doc(hidden)]
-    #[inline(always)]
-    fn args_kind(&self) -> ArgsKind {
-        match self {
-            Color::Ansi(_) => ArgsKind::Ansi,
-            Color::Css(_) => ArgsKind::Rgb,
-            Color::Xterm(_) => ArgsKind::Xterm,
-            Color::Rgb(_) => ArgsKind::Rgb,
-        }
-    }
-
     fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_foreground_args(f),
@@ -261,14 +237,6 @@ pub enum Kind {
     MaybeSome,
     AlwaysSome,
     NeverSome,
-}
-
-#[doc(hidden)]
-pub enum ArgsKind {
-    Ansi,
-    Xterm,
-    Rgb,
-    Unknown,
 }
 
 /// An optional color type

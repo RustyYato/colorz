@@ -41,7 +41,7 @@ macro_rules! XTerm {
 
         /// Convert a literal color args to the compile time Xterm color type
         #[macro_export]
-        macro_rules! xterm_from_args {
+        macro_rules! xterm_from_code {
             $(($args) => { $crate::xterm::$name };)*
             ($d t:tt) => {{
                 compile_error! { concat!("Invalid input, expected an unsuffixed u8 literal but got: ", stringify!($d t)) }
@@ -51,7 +51,7 @@ macro_rules! XTerm {
         impl From<u8> for XtermColor {
             #[inline(always)]
             fn from(args: u8) -> Self {
-                Self::from_args(args)
+                Self::from_code(args)
             }
         }
 
@@ -99,7 +99,7 @@ macro_rules! XTerm {
         impl XtermColor {
             /// Get a Xterm color via it's color args
             #[inline]
-            pub const fn from_args(args: u8) -> Self {
+            pub const fn from_code(args: u8) -> Self {
                 match args {
                     $($args => Self::$name,)*
                 }
@@ -166,9 +166,6 @@ macro_rules! XTerm {
         impl ColorSpec for XtermColor {
             type Dynamic = Self;
 
-            #[doc(hidden)]
-            const KIND: crate::ArgsKind = crate::ArgsKind::Xterm;
-
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
                 self
@@ -232,9 +229,6 @@ macro_rules! XTerm {
             impl crate::seal::Seal for $name {}
             impl ColorSpec for $name {
                 type Dynamic = XtermColor;
-
-                #[doc(hidden)]
-                const KIND: crate::ArgsKind = crate::ArgsKind::Xterm;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
