@@ -47,6 +47,13 @@ macro_rules! Css {
             }
 
             #[inline]
+            pub const fn underline_code(self) -> &'static str {
+                match self {
+                    $(Self::$name => $name::UNDERLINE_CODE,)*
+                }
+            }
+
+            #[inline]
             pub const fn foreground_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_ESCAPE,)*
@@ -57,6 +64,13 @@ macro_rules! Css {
             pub const fn background_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::BACKGROUND_ESCAPE,)*
+                }
+            }
+
+            #[inline]
+            pub const fn underline_escape(self) -> &'static str {
+                match self {
+                    $(Self::$name => $name::UNDERLINE_ESCAPE,)*
                 }
             }
         }
@@ -88,6 +102,11 @@ macro_rules! Css {
             }
 
             #[inline]
+            fn underline_code(&self) -> &'static str {
+                (*self).underline_code()
+            }
+
+            #[inline]
             fn foreground_escape(&self) -> &'static str {
                 (*self).foreground_escape()
             }
@@ -95,6 +114,11 @@ macro_rules! Css {
             #[inline]
             fn background_escape(&self) -> &'static str {
                 (*self).background_escape()
+            }
+
+            #[inline]
+            fn underline_escape(&self) -> &'static str {
+                (*self).underline_escape()
             }
         }
 
@@ -107,9 +131,11 @@ macro_rules! Css {
 
                 pub const FOREGROUND_CODE: &'static str = RGB::<$r, $g, $b>::FOREGROUND_CODE;
                 pub const BACKGROUND_CODE: &'static str = RGB::<$r, $g, $b>::BACKGROUND_CODE;
+                pub const UNDERLINE_CODE: &'static str = RGB::<$r, $g, $b>::UNDERLINE_CODE;
 
                 pub const FOREGROUND_ESCAPE: &'static str = RGB::<$r, $g, $b>::FOREGROUND_ESCAPE;
                 pub const BACKGROUND_ESCAPE: &'static str = RGB::<$r, $g, $b>::BACKGROUND_ESCAPE;
+                pub const UNDERLINE_ESCAPE: &'static str = RGB::<$r, $g, $b>::UNDERLINE_ESCAPE;
             }
 
             impl AnsiColorCode for $name {
@@ -139,6 +165,11 @@ macro_rules! Css {
                 }
 
                 #[inline]
+                fn underline_code(&self) -> &'static str {
+                    Self::UNDERLINE_CODE
+                }
+
+                #[inline]
                 fn foreground_escape(&self) -> &'static str {
                     Self::FOREGROUND_ESCAPE
                 }
@@ -146,6 +177,11 @@ macro_rules! Css {
                 #[inline]
                 fn background_escape(&self) -> &'static str {
                     Self::BACKGROUND_ESCAPE
+                }
+
+                #[inline]
+                fn underline_escape(&self) -> &'static str {
+                    Self::UNDERLINE_ESCAPE
                 }
             }
         )*

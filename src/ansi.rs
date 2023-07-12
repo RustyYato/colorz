@@ -72,6 +72,11 @@ macro_rules! AnsiColor {
             }
 
             #[inline]
+            fn underline_code(&self) -> &'static str {
+                ""
+            }
+
+            #[inline]
             fn foreground_code(&self) -> &'static str {
                 (*self).foreground_code()
             }
@@ -89,6 +94,11 @@ macro_rules! AnsiColor {
             #[inline]
             fn background_escape(&self) -> &'static str {
                 (*self).background_escape()
+            }
+
+            #[inline]
+            fn underline_escape(&self) -> &'static str {
+                ""
             }
         }
 
@@ -130,6 +140,11 @@ macro_rules! AnsiColor {
                 }
 
                 #[inline]
+                fn underline_code(&self) -> &'static str {
+                    ""
+                }
+
+                #[inline]
                 fn foreground_escape(&self) -> &'static str {
                     Self::FOREGROUND_ESCAPE
                 }
@@ -137,6 +152,11 @@ macro_rules! AnsiColor {
                 #[inline]
                 fn background_escape(&self) -> &'static str {
                     Self::BACKGROUND_ESCAPE
+                }
+
+                #[inline]
+                fn underline_escape(&self) -> &'static str {
+                    ""
                 }
             }
         )*

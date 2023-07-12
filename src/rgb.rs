@@ -19,6 +19,10 @@ impl WriteColor for Rgb {
     fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "48;2;{};{};{}", self.red, self.green, self.blue)
     }
+
+    fn fmt_underline_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "58;2;{};{};{}", self.red, self.green, self.blue)
+    }
 }
 
 const fn raw_code(r: u8, g: u8, b: u8) -> [u8; 13] {
@@ -111,14 +115,17 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> RGB<RED, GREEN, BLUE> {
 
     const FOREGROUND_CODE_DATA: [u8; 16] = code(b'3', RED, GREEN, BLUE);
     const BACKGROUND_CODE_DATA: [u8; 16] = code(b'4', RED, GREEN, BLUE);
+    const UNDERLINE_CODE_DATA: [u8; 16] = code(b'5', RED, GREEN, BLUE);
 
     pub const CODE: &'static str = to_str(&raw_code(RED, GREEN, BLUE));
 
     pub const FOREGROUND_CODE: &'static str = to_str(&Self::FOREGROUND_CODE_DATA);
     pub const BACKGROUND_CODE: &'static str = to_str(&Self::BACKGROUND_CODE_DATA);
+    pub const UNDERLINE_CODE: &'static str = to_str(&Self::UNDERLINE_CODE_DATA);
 
     pub const FOREGROUND_ESCAPE: &'static str = to_str(&escape(Self::FOREGROUND_CODE_DATA));
     pub const BACKGROUND_ESCAPE: &'static str = to_str(&escape(Self::BACKGROUND_CODE_DATA));
+    pub const UNDERLINE_ESCAPE: &'static str = to_str(&escape(Self::UNDERLINE_CODE_DATA));
 }
 
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for RGB<RED, GREEN, BLUE> {
@@ -148,6 +155,11 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for RGB<RED, 
     }
 
     #[inline]
+    fn underline_code(&self) -> &'static str {
+        Self::UNDERLINE_CODE
+    }
+
+    #[inline]
     fn foreground_escape(&self) -> &'static str {
         Self::FOREGROUND_ESCAPE
     }
@@ -155,5 +167,10 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for RGB<RED, 
     #[inline]
     fn background_escape(&self) -> &'static str {
         Self::BACKGROUND_ESCAPE
+    }
+
+    #[inline]
+    fn underline_escape(&self) -> &'static str {
+        Self::UNDERLINE_ESCAPE
     }
 }

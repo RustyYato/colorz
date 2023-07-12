@@ -77,6 +77,13 @@ macro_rules! XTerm {
             }
 
             #[inline]
+            pub const fn underline_code(self) -> &'static str {
+                match self {
+                    $(Self::$name => $name::UNDERLINE_CODE,)*
+                }
+            }
+
+            #[inline]
             pub const fn foreground_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_ESCAPE,)*
@@ -87,6 +94,13 @@ macro_rules! XTerm {
             pub const fn background_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::BACKGROUND_ESCAPE,)*
+                }
+            }
+
+            #[inline]
+            pub const fn underline_escape(self) -> &'static str {
+                match self {
+                    $(Self::$name => $name::UNDERLINE_ESCAPE,)*
                 }
             }
         }
@@ -118,6 +132,11 @@ macro_rules! XTerm {
             }
 
             #[inline]
+            fn underline_code(&self) -> &'static str {
+                (*self).underline_code()
+            }
+
+            #[inline]
             fn foreground_escape(&self) -> &'static str {
                 (*self).foreground_escape()
             }
@@ -125,6 +144,11 @@ macro_rules! XTerm {
             #[inline]
             fn background_escape(&self) -> &'static str {
                 (*self).background_escape()
+            }
+
+            #[inline]
+            fn underline_escape(&self) -> &'static str {
+                (*self).underline_escape()
             }
         }
 
@@ -137,9 +161,11 @@ macro_rules! XTerm {
 
                 pub const FOREGROUND_CODE: &'static str = concat!("38;5;", stringify!($code));
                 pub const BACKGROUND_CODE: &'static str = concat!("48;5;", stringify!($code));
+                pub const UNDERLINE_CODE: &'static str = concat!("58;5;", stringify!($code));
 
                 pub const FOREGROUND_ESCAPE: &'static str = concat!("\x1b[38;5;", stringify!($code) ,"m");
                 pub const BACKGROUND_ESCAPE: &'static str = concat!("\x1b[48;5;", stringify!($code) ,"m");
+                pub const UNDERLINE_ESCAPE: &'static str = concat!("\x1b[58;5;", stringify!($code) ,"m");
             }
 
             impl AnsiColorCode for $name {
@@ -169,6 +195,11 @@ macro_rules! XTerm {
                 }
 
                 #[inline]
+                fn underline_code(&self) -> &'static str {
+                    Self::UNDERLINE_CODE
+                }
+
+                #[inline]
                 fn foreground_escape(&self) -> &'static str {
                     Self::FOREGROUND_ESCAPE
                 }
@@ -176,6 +207,11 @@ macro_rules! XTerm {
                 #[inline]
                 fn background_escape(&self) -> &'static str {
                     Self::BACKGROUND_ESCAPE
+                }
+
+                #[inline]
+                fn underline_escape(&self) -> &'static str {
+                    Self::UNDERLINE_ESCAPE
                 }
             }
         )*
