@@ -1,6 +1,6 @@
 //! 48-bit color values. Not as widely supported as standard ANSI or Xterm.
 
-use crate::{AnsiColorCode, WriteColor};
+use crate::{ColorSpec, WriteColor};
 
 /// An Rgb value for color
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -15,20 +15,20 @@ pub struct RgbColor {
 
 impl crate::seal::Seal for RgbColor {}
 impl WriteColor for RgbColor {
-    fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "38;2;{};{};{}", self.red, self.green, self.blue)
     }
 
-    fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_background_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "48;2;{};{};{}", self.red, self.green, self.blue)
     }
 
-    fn fmt_underline_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_underline_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "58;2;{};{};{}", self.red, self.green, self.blue)
     }
 }
 
-const fn raw_code(r: u8, g: u8, b: u8) -> [u8; 13] {
+const fn raw_args(r: u8, g: u8, b: u8) -> [u8; 13] {
     let mut output = *b"2;rrr;ggg;bbb";
 
     const fn d(mut x: u8, mut n: u8) -> u8 {
@@ -55,7 +55,7 @@ const fn raw_code(r: u8, g: u8, b: u8) -> [u8; 13] {
     output
 }
 
-const fn code(first: u8, r: u8, g: u8, b: u8) -> [u8; 16] {
+const fn args(first: u8, r: u8, g: u8, b: u8) -> [u8; 16] {
     let mut output = *b"x8;2;rrr;ggg;bbb";
     output[0] = first;
 
@@ -121,34 +121,34 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> Rgb<RED, GREEN, BLUE> {
         blue: BLUE,
     };
 
-    const FOREGROUND_CODE_DATA: [u8; 16] = code(b'3', RED, GREEN, BLUE);
-    const BACKGROUND_CODE_DATA: [u8; 16] = code(b'4', RED, GREEN, BLUE);
-    const UNDERLINE_CODE_DATA: [u8; 16] = code(b'5', RED, GREEN, BLUE);
+    const FOREGROUND_ARGS_DATA: [u8; 16] = args(b'3', RED, GREEN, BLUE);
+    const BACKGROUND_ARGS_DATA: [u8; 16] = args(b'4', RED, GREEN, BLUE);
+    const UNDERLINE_ARGS_DATA: [u8; 16] = args(b'5', RED, GREEN, BLUE);
 
-    /// The ANSI color code
-    pub const CODE: &'static str = to_str(&raw_code(RED, GREEN, BLUE));
+    /// The ANSI color args
+    pub const ARGS: &'static str = to_str(&raw_args(RED, GREEN, BLUE));
 
     /// The ANSI foreground color arguments
-    pub const FOREGROUND_CODE: &'static str = to_str(&Self::FOREGROUND_CODE_DATA);
+    pub const FOREGROUND_ARGS: &'static str = to_str(&Self::FOREGROUND_ARGS_DATA);
     /// The ANSI background color arguments
-    pub const BACKGROUND_CODE: &'static str = to_str(&Self::BACKGROUND_CODE_DATA);
+    pub const BACKGROUND_ARGS: &'static str = to_str(&Self::BACKGROUND_ARGS_DATA);
     /// The ANSI underline color arguments
-    pub const UNDERLINE_CODE: &'static str = to_str(&Self::UNDERLINE_CODE_DATA);
+    pub const UNDERLINE_ARGS: &'static str = to_str(&Self::UNDERLINE_ARGS_DATA);
 
     /// The ANSI foreground color sequence
-    pub const FOREGROUND_ESCAPE: &'static str = to_str(&escape(Self::FOREGROUND_CODE_DATA));
+    pub const FOREGROUND_ESCAPE: &'static str = to_str(&escape(Self::FOREGROUND_ARGS_DATA));
     /// The ANSI background color sequence
-    pub const BACKGROUND_ESCAPE: &'static str = to_str(&escape(Self::BACKGROUND_CODE_DATA));
+    pub const BACKGROUND_ESCAPE: &'static str = to_str(&escape(Self::BACKGROUND_ARGS_DATA));
     /// The ANSI underline color sequence
-    pub const UNDERLINE_ESCAPE: &'static str = to_str(&escape(Self::UNDERLINE_CODE_DATA));
+    pub const UNDERLINE_ESCAPE: &'static str = to_str(&escape(Self::UNDERLINE_ARGS_DATA));
 }
 
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> crate::seal::Seal for Rgb<RED, GREEN, BLUE> {}
-impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for Rgb<RED, GREEN, BLUE> {
+impl<const RED: u8, const GREEN: u8, const BLUE: u8> ColorSpec for Rgb<RED, GREEN, BLUE> {
     type Dynamic = RgbColor;
 
     #[doc(hidden)]
-    const KIND: crate::CodeKind = crate::CodeKind::Rgb;
+    const KIND: crate::ArgsKind = crate::ArgsKind::Rgb;
 
     #[inline]
     fn into_dynamic(self) -> Self::Dynamic {
@@ -156,18 +156,18 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> AnsiColorCode for Rgb<RED, 
     }
 
     #[inline]
-    fn foreground_code(&self) -> &'static str {
-        Self::FOREGROUND_CODE
+    fn foreground_args(&self) -> &'static str {
+        Self::FOREGROUND_ARGS
     }
 
     #[inline]
-    fn background_code(&self) -> &'static str {
-        Self::BACKGROUND_CODE
+    fn background_args(&self) -> &'static str {
+        Self::BACKGROUND_ARGS
     }
 
     #[inline]
-    fn underline_code(&self) -> &'static str {
-        Self::UNDERLINE_CODE
+    fn underline_args(&self) -> &'static str {
+        Self::UNDERLINE_ARGS
     }
 
     #[inline]

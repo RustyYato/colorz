@@ -3,13 +3,11 @@
 //! Reference: https://www.w3schools.com/cssref/css_colors.asp Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/color_value
 
 use crate::rgb::Rgb;
-use crate::AnsiColorCode;
+use crate::ColorSpec;
 
 macro_rules! Css {
     ($($name:ident ($r:literal, $g:literal, $b:literal))*) => {
         /// A runtime Css color type
-        ///
-        /// Can be converted from a u8 via [`From`] or [`from_code`](Self::from_code) based on the Xterm color code
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum CssColor {
             $(
@@ -72,35 +70,35 @@ macro_rules! Css {
         )*
 
         impl CssColor {
-            /// The ANSI color code
+            /// The ANSI color args
             #[inline]
-            pub const fn code(self) -> &'static str {
+            pub const fn args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::CODE,)*
+                    $(Self::$name => $name::ARGS,)*
                 }
             }
 
             /// The ANSI foreground color arguments
             #[inline]
-            pub const fn foreground_code(self) -> &'static str {
+            pub const fn foreground_args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::FOREGROUND_CODE,)*
+                    $(Self::$name => $name::FOREGROUND_ARGS,)*
                 }
             }
 
             /// The ANSI background color arguments
             #[inline]
-            pub const fn background_code(self) -> &'static str {
+            pub const fn background_args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::BACKGROUND_CODE,)*
+                    $(Self::$name => $name::BACKGROUND_ARGS,)*
                 }
             }
 
             /// The ANSI underline color arguments
             #[inline]
-            pub const fn underline_code(self) -> &'static str {
+            pub const fn underline_args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::UNDERLINE_CODE,)*
+                    $(Self::$name => $name::UNDERLINE_ARGS,)*
                 }
             }
 
@@ -130,11 +128,11 @@ macro_rules! Css {
         }
 
         impl crate::seal::Seal for CssColor {}
-        impl AnsiColorCode for CssColor {
+        impl ColorSpec for CssColor {
             type Dynamic = Self;
 
             #[doc(hidden)]
-            const KIND: crate::CodeKind = crate::CodeKind::Rgb;
+            const KIND: crate::ArgsKind = crate::ArgsKind::Rgb;
 
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
@@ -142,18 +140,18 @@ macro_rules! Css {
             }
 
             #[inline]
-            fn foreground_code(&self) -> &'static str {
-                (*self).foreground_code()
+            fn foreground_args(&self) -> &'static str {
+                (*self).foreground_args()
             }
 
             #[inline]
-            fn background_code(&self) -> &'static str {
-                (*self).background_code()
+            fn background_args(&self) -> &'static str {
+                (*self).background_args()
             }
 
             #[inline]
-            fn underline_code(&self) -> &'static str {
-                (*self).underline_code()
+            fn underline_args(&self) -> &'static str {
+                (*self).underline_args()
             }
 
             #[inline]
@@ -179,15 +177,15 @@ macro_rules! Css {
                 /// The corrosponding value of [`CssColor`]
                 pub const RGB: Rgb<$r, $g, $b> = Rgb;
 
-                /// The ANSI color code
-                pub const CODE: &'static str = Rgb::<$r, $g, $b>::CODE;
+                /// The ANSI color args
+                pub const ARGS: &'static str = Rgb::<$r, $g, $b>::ARGS;
 
                 /// The ANSI foreground color arguments
-                pub const FOREGROUND_CODE: &'static str = Rgb::<$r, $g, $b>::FOREGROUND_CODE;
+                pub const FOREGROUND_ARGS: &'static str = Rgb::<$r, $g, $b>::FOREGROUND_ARGS;
                 /// The ANSI background color arguments
-                pub const BACKGROUND_CODE: &'static str = Rgb::<$r, $g, $b>::BACKGROUND_CODE;
+                pub const BACKGROUND_ARGS: &'static str = Rgb::<$r, $g, $b>::BACKGROUND_ARGS;
                 /// The ANSI underline color arguments
-                pub const UNDERLINE_CODE: &'static str = Rgb::<$r, $g, $b>::UNDERLINE_CODE;
+                pub const UNDERLINE_ARGS: &'static str = Rgb::<$r, $g, $b>::UNDERLINE_ARGS;
 
                 /// The ANSI foreground color sequence
                 pub const FOREGROUND_ESCAPE: &'static str = Rgb::<$r, $g, $b>::FOREGROUND_ESCAPE;
@@ -198,11 +196,11 @@ macro_rules! Css {
             }
 
             impl crate::seal::Seal for $name {}
-            impl AnsiColorCode for $name {
+            impl ColorSpec for $name {
                 type Dynamic = CssColor;
 
                 #[doc(hidden)]
-                const KIND: crate::CodeKind = crate::CodeKind::Rgb;
+                const KIND: crate::ArgsKind = crate::ArgsKind::Rgb;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
@@ -210,18 +208,18 @@ macro_rules! Css {
                 }
 
                 #[inline]
-                fn foreground_code(&self) -> &'static str {
-                    Self::FOREGROUND_CODE
+                fn foreground_args(&self) -> &'static str {
+                    Self::FOREGROUND_ARGS
                 }
 
                 #[inline]
-                fn background_code(&self) -> &'static str {
-                    Self::BACKGROUND_CODE
+                fn background_args(&self) -> &'static str {
+                    Self::BACKGROUND_ARGS
                 }
 
                 #[inline]
-                fn underline_code(&self) -> &'static str {
-                    Self::UNDERLINE_CODE
+                fn underline_args(&self) -> &'static str {
+                    Self::UNDERLINE_ARGS
                 }
 
                 #[inline]

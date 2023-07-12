@@ -1,24 +1,24 @@
-//! Xterm 8-bit colors (256 supported colors), a superset of ANSI color codes
+//! Xterm 8-bit colors (256 supported colors), a superset of ANSI color args
 
 // a) color rgb values come from https://github.com/jonasjacek/colors/blob/master/data.json
 // b) color names taken from https://gitlab.freedesktop.org/xorg/app/rgb/raw/master/rgb.txt
 // Then the closest rgb value from a) to the rgb value in b) was found, and that was selected
 // as the color name. (see `color_name_picker.py`)
 
-use crate::AnsiColorCode;
 #[cfg(doc)]
 use crate::Color;
+use crate::ColorSpec;
 
 macro_rules! XTerm {
-    ($d:tt $($code:tt $name:ident)*) => {
+    ($d:tt $($args:tt $name:ident)*) => {
         /// A runtime Xterm color type
         ///
-        /// Can be converted from a u8 via [`From`] or [`from_code`](Self::from_code) based on the Xterm color code
+        /// Can be converted from a u8 via [`From`] or [`from_args`](Self::from_args) based on the Xterm color args
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum XtermColor {
             $(
                 #[doc = concat!("The runtime version of [`", stringify!($name), "`](self::", stringify!($name), ")")]
-                #[doc = concat!(" repesenting the XTerm code ", stringify!($code))]
+                #[doc = concat!(" repesenting the XTerm args ", stringify!($args))]
                 $name,
             )*
         }
@@ -26,12 +26,12 @@ macro_rules! XTerm {
         const _: [(); core::mem::size_of::<XtermColor>()] = [(); 1];
 
         const _: () = {
-            $(assert!(XtermColor::$name as u8 == $code);)*
+            $(assert!(XtermColor::$name as u8 == $args);)*
         };
 
         $(
             /// A compile time Xterm color type
-            #[doc = concat!(" repesenting the color code ", stringify!($code))]
+            #[doc = concat!(" repesenting the color args ", stringify!($args))]
             ///
             /// You can convert this type to [`XtermColor`] via [`From`] or [`Self::DYNAMIC`]
             /// and to [`Color`] or [`Option<Color>`] via [`From`]
@@ -39,10 +39,10 @@ macro_rules! XTerm {
             pub struct $name;
         )*
 
-        /// Convert a literal color code to the compile time Xterm color type
+        /// Convert a literal color args to the compile time Xterm color type
         #[macro_export]
-        macro_rules! xterm_from_code {
-            $(($code) => { $crate::xterm::$name };)*
+        macro_rules! xterm_from_args {
+            $(($args) => { $crate::xterm::$name };)*
             ($d t:tt) => {{
                 compile_error! { concat!("Invalid input, expected an unsuffixed u8 literal but got: ", stringify!($d t)) }
             }};
@@ -50,8 +50,8 @@ macro_rules! XTerm {
 
         impl From<u8> for XtermColor {
             #[inline(always)]
-            fn from(code: u8) -> Self {
-                Self::from_code(code)
+            fn from(args: u8) -> Self {
+                Self::from_args(args)
             }
         }
 
@@ -97,43 +97,43 @@ macro_rules! XTerm {
         )*
 
         impl XtermColor {
-            /// Get a Xterm color via it's color code
+            /// Get a Xterm color via it's color args
             #[inline]
-            pub const fn from_code(code: u8) -> Self {
-                match code {
-                    $($code => Self::$name,)*
+            pub const fn from_args(args: u8) -> Self {
+                match args {
+                    $($args => Self::$name,)*
                 }
             }
 
-            /// The color code of this Xterm color
+            /// The color args of this Xterm color
             #[inline]
-            pub const fn code(self) -> &'static str {
+            pub const fn args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::CODE,)*
+                    $(Self::$name => $name::ARGS,)*
                 }
             }
 
-            /// The foreground color code of this Xterm color
+            /// The foreground color args of this Xterm color
             #[inline]
-            pub const fn foreground_code(self) -> &'static str {
+            pub const fn foreground_args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::FOREGROUND_CODE,)*
+                    $(Self::$name => $name::FOREGROUND_ARGS,)*
                 }
             }
 
-            /// The background color code of this Xterm color
+            /// The background color args of this Xterm color
             #[inline]
-            pub const fn background_code(self) -> &'static str {
+            pub const fn background_args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::BACKGROUND_CODE,)*
+                    $(Self::$name => $name::BACKGROUND_ARGS,)*
                 }
             }
 
-            /// The underline color code of this Xterm color
+            /// The underline color args of this Xterm color
             #[inline]
-            pub const fn underline_code(self) -> &'static str {
+            pub const fn underline_args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::UNDERLINE_CODE,)*
+                    $(Self::$name => $name::UNDERLINE_ARGS,)*
                 }
             }
 
@@ -163,11 +163,11 @@ macro_rules! XTerm {
         }
 
         impl crate::seal::Seal for XtermColor {}
-        impl AnsiColorCode for XtermColor {
+        impl ColorSpec for XtermColor {
             type Dynamic = Self;
 
             #[doc(hidden)]
-            const KIND: crate::CodeKind = crate::CodeKind::Xterm;
+            const KIND: crate::ArgsKind = crate::ArgsKind::Xterm;
 
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
@@ -175,18 +175,18 @@ macro_rules! XTerm {
             }
 
             #[inline]
-            fn foreground_code(&self) -> &'static str {
-                (*self).foreground_code()
+            fn foreground_args(&self) -> &'static str {
+                (*self).foreground_args()
             }
 
             #[inline]
-            fn background_code(&self) -> &'static str {
-                (*self).background_code()
+            fn background_args(&self) -> &'static str {
+                (*self).background_args()
             }
 
             #[inline]
-            fn underline_code(&self) -> &'static str {
-                (*self).underline_code()
+            fn underline_args(&self) -> &'static str {
+                (*self).underline_args()
             }
 
             #[inline]
@@ -211,30 +211,30 @@ macro_rules! XTerm {
                 /// The corrosponding variant on [`XtermColor`]
                 pub const DYNAMIC: XtermColor = XtermColor::$name;
 
-                /// The ANSI color code
-                pub const CODE: &'static str = concat!("5;", stringify!($code));
+                /// The ANSI color args
+                pub const ARGS: &'static str = concat!("5;", stringify!($args));
 
                 /// The ANSI foreground color arguments
-                pub const FOREGROUND_CODE: &'static str = concat!("38;5;", stringify!($code));
+                pub const FOREGROUND_ARGS: &'static str = concat!("38;5;", stringify!($args));
                 /// The ANSI background color arguments
-                pub const BACKGROUND_CODE: &'static str = concat!("48;5;", stringify!($code));
+                pub const BACKGROUND_ARGS: &'static str = concat!("48;5;", stringify!($args));
                 /// The ANSI underline color arguments
-                pub const UNDERLINE_CODE: &'static str = concat!("58;5;", stringify!($code));
+                pub const UNDERLINE_ARGS: &'static str = concat!("58;5;", stringify!($args));
 
                 /// The ANSI foreground color sequence
-                pub const FOREGROUND_ESCAPE: &'static str = concat!("\x1b[38;5;", stringify!($code) ,"m");
+                pub const FOREGROUND_ESCAPE: &'static str = concat!("\x1b[38;5;", stringify!($args) ,"m");
                 /// The ANSI background color sequence
-                pub const BACKGROUND_ESCAPE: &'static str = concat!("\x1b[48;5;", stringify!($code) ,"m");
+                pub const BACKGROUND_ESCAPE: &'static str = concat!("\x1b[48;5;", stringify!($args) ,"m");
                 /// The ANSI underline color sequence
-                pub const UNDERLINE_ESCAPE: &'static str = concat!("\x1b[58;5;", stringify!($code) ,"m");
+                pub const UNDERLINE_ESCAPE: &'static str = concat!("\x1b[58;5;", stringify!($args) ,"m");
             }
 
             impl crate::seal::Seal for $name {}
-            impl AnsiColorCode for $name {
+            impl ColorSpec for $name {
                 type Dynamic = XtermColor;
 
                 #[doc(hidden)]
-                const KIND: crate::CodeKind = crate::CodeKind::Xterm;
+                const KIND: crate::ArgsKind = crate::ArgsKind::Xterm;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
@@ -242,18 +242,18 @@ macro_rules! XTerm {
                 }
 
                 #[inline]
-                fn foreground_code(&self) -> &'static str {
-                    Self::FOREGROUND_CODE
+                fn foreground_args(&self) -> &'static str {
+                    Self::FOREGROUND_ARGS
                 }
 
                 #[inline]
-                fn background_code(&self) -> &'static str {
-                    Self::BACKGROUND_CODE
+                fn background_args(&self) -> &'static str {
+                    Self::BACKGROUND_ARGS
                 }
 
                 #[inline]
-                fn underline_code(&self) -> &'static str {
-                    Self::UNDERLINE_CODE
+                fn underline_args(&self) -> &'static str {
+                    Self::UNDERLINE_ARGS
                 }
 
                 #[inline]

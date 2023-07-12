@@ -1,8 +1,8 @@
 //! Basic ANSI color codes, which are widely supported on most terminals
 
-use crate::AnsiColorCode;
 #[cfg(doc)]
 use crate::Color;
+use crate::ColorSpec;
 
 macro_rules! MkAnsiColor {
     (
@@ -13,7 +13,7 @@ macro_rules! MkAnsiColor {
         pub enum AnsiColor {
             $(
                 #[doc = concat!("The runtime version of [`", stringify!($name), "`](self::", stringify!($name), ")")]
-                #[doc = concat!(" repesenting the color code ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
+                #[doc = concat!(" repesenting the color args ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
                 $name,
             )*
         }
@@ -22,7 +22,7 @@ macro_rules! MkAnsiColor {
 
         $(
             /// A compile time ANSI color type
-            #[doc = concat!(" repesenting the color code ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
+            #[doc = concat!(" repesenting the color args ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
             ///
             /// You can convert this type to [`AnsiColor`] via [`From`] or [`Self::DYNAMIC`]
             /// and to [`Color`] or [`Option<Color>`] via [`From`]
@@ -73,18 +73,18 @@ macro_rules! MkAnsiColor {
 
         impl AnsiColor {
             #[inline]
-            /// The ANSI foreground color code
-            pub const fn foreground_code(self) -> &'static str {
+            /// The ANSI foreground color args
+            pub const fn foreground_args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::FOREGROUND_CODE,)*
+                    $(Self::$name => $name::FOREGROUND_ARGS,)*
                 }
             }
 
             #[inline]
-            /// The ANSI background color code
-            pub const fn background_code(self) -> &'static str {
+            /// The ANSI background color args
+            pub const fn background_args(self) -> &'static str {
                 match self {
-                    $(Self::$name => $name::BACKGROUND_CODE,)*
+                    $(Self::$name => $name::BACKGROUND_ARGS,)*
                 }
             }
 
@@ -106,11 +106,11 @@ macro_rules! MkAnsiColor {
         }
 
         impl crate::seal::Seal for AnsiColor {}
-        impl AnsiColorCode for AnsiColor {
+        impl ColorSpec for AnsiColor {
             type Dynamic = Self;
 
             #[doc(hidden)]
-            const KIND: crate::CodeKind = crate::CodeKind::Ansi;
+            const KIND: crate::ArgsKind = crate::ArgsKind::Ansi;
 
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
@@ -118,18 +118,18 @@ macro_rules! MkAnsiColor {
             }
 
             #[inline]
-            fn underline_code(&self) -> &'static str {
+            fn underline_args(&self) -> &'static str {
                 ""
             }
 
             #[inline]
-            fn foreground_code(&self) -> &'static str {
-                (*self).foreground_code()
+            fn foreground_args(&self) -> &'static str {
+                (*self).foreground_args()
             }
 
             #[inline]
-            fn background_code(&self) -> &'static str {
-                (*self).background_code()
+            fn background_args(&self) -> &'static str {
+                (*self).background_args()
             }
 
             #[inline]
@@ -154,9 +154,9 @@ macro_rules! MkAnsiColor {
                 pub const DYNAMIC: AnsiColor = AnsiColor::$name;
 
                 /// The ANSI foreground color arguments
-                pub const FOREGROUND_CODE: &'static str = stringify!($fg);
+                pub const FOREGROUND_ARGS: &'static str = stringify!($fg);
                 /// The ANSI background color arguments
-                pub const BACKGROUND_CODE: &'static str = stringify!($bg);
+                pub const BACKGROUND_ARGS: &'static str = stringify!($bg);
 
                 /// The ANSI foreground color escape sequence
                 pub const FOREGROUND_ESCAPE: &'static str = concat!("\x1b[", stringify!($fg) ,"m");
@@ -165,11 +165,11 @@ macro_rules! MkAnsiColor {
             }
 
             impl crate::seal::Seal for $name {}
-            impl AnsiColorCode for $name {
+            impl ColorSpec for $name {
                 type Dynamic = AnsiColor;
 
                 #[doc(hidden)]
-                const KIND: crate::CodeKind = crate::CodeKind::Ansi;
+                const KIND: crate::ArgsKind = crate::ArgsKind::Ansi;
 
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
@@ -177,17 +177,17 @@ macro_rules! MkAnsiColor {
                 }
 
                 #[inline]
-                fn foreground_code(&self) -> &'static str {
-                    Self::FOREGROUND_CODE
+                fn foreground_args(&self) -> &'static str {
+                    Self::FOREGROUND_ARGS
                 }
 
                 #[inline]
-                fn background_code(&self) -> &'static str {
-                    Self::BACKGROUND_CODE
+                fn background_args(&self) -> &'static str {
+                    Self::BACKGROUND_ARGS
                 }
 
                 #[inline]
-                fn underline_code(&self) -> &'static str {
+                fn underline_args(&self) -> &'static str {
                     ""
                 }
 

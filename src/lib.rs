@@ -55,7 +55,7 @@ pub use style::{Effect, EffectFlags, EffectFlagsIter, Style};
 #[derive(Debug, Clone, Copy)]
 pub struct NoColor;
 
-/// A runtime color code
+/// A runtime color args
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color {
     /// The ANSI color type (see [`ansi`] for details)
@@ -72,25 +72,25 @@ mod seal {
     pub trait Seal {}
 }
 
-/// A sealed trait for describing ANSI color codes
-pub trait AnsiColorCode: seal::Seal {
+/// A sealed trait for describing ANSI color args
+pub trait ColorSpec: seal::Seal {
     /// The runtime version of the color
     type Dynamic;
 
     #[doc(hidden)]
-    const KIND: CodeKind = CodeKind::Unknown;
+    const KIND: ArgsKind = ArgsKind::Unknown;
 
     /// Covnert to the runtime version of the color
     fn into_dynamic(self) -> Self::Dynamic;
 
     /// The foreground color arguments
-    fn foreground_code(&self) -> &'static str;
+    fn foreground_args(&self) -> &'static str;
 
     /// The background color arguments
-    fn background_code(&self) -> &'static str;
+    fn background_args(&self) -> &'static str;
 
     /// The underline color arguments
-    fn underline_code(&self) -> &'static str;
+    fn underline_args(&self) -> &'static str;
 
     /// The foreground color sequence
     fn foreground_escape(&self) -> &'static str;
@@ -102,23 +102,23 @@ pub trait AnsiColorCode: seal::Seal {
     fn underline_escape(&self) -> &'static str;
 }
 
-impl<C: AnsiColorCode> WriteColor for C {
+impl<C: ColorSpec> WriteColor for C {
     #[doc(hidden)]
     #[inline(always)]
-    fn code_kind(&self) -> CodeKind {
+    fn args_kind(&self) -> ArgsKind {
         C::KIND
     }
 
-    fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str(self.foreground_code())
+    fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.foreground_args())
     }
 
-    fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str(self.background_code())
+    fn fmt_background_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.background_args())
     }
 
-    fn fmt_underline_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str(self.underline_code())
+    fn fmt_underline_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.underline_args())
     }
 
     fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -134,41 +134,41 @@ impl<C: AnsiColorCode> WriteColor for C {
     }
 }
 
-/// A sealed trait for describing how to write ANSI color codes
+/// A sealed trait for describing how to write ANSI color args
 pub trait WriteColor: seal::Seal {
     #[doc(hidden)]
     #[inline(always)]
-    fn code_kind(&self) -> CodeKind {
-        CodeKind::Unknown
+    fn args_kind(&self) -> ArgsKind {
+        ArgsKind::Unknown
     }
 
     /// write the foreground color arguments
-    fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+    fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
     /// write the background color arguments
-    fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+    fn fmt_background_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
     /// write the underline color arguments
-    fn fmt_underline_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+    fn fmt_underline_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
     /// write the foreground color sequence
     fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[")?;
-        self.fmt_foreground_code(f)?;
+        self.fmt_foreground_args(f)?;
         f.write_str("m")
     }
 
     /// write the background color sequence
     fn fmt_background(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[")?;
-        self.fmt_background_code(f)?;
+        self.fmt_background_args(f)?;
         f.write_str("m")
     }
 
     /// write the underline color sequence
     fn fmt_underline(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[58;")?;
-        self.fmt_underline_code(f)?;
+        self.fmt_underline_args(f)?;
         f.write_str("m")
     }
 }
@@ -177,39 +177,39 @@ impl seal::Seal for Color {}
 impl WriteColor for Color {
     #[doc(hidden)]
     #[inline(always)]
-    fn code_kind(&self) -> CodeKind {
+    fn args_kind(&self) -> ArgsKind {
         match self {
-            Color::Ansi(_) => CodeKind::Ansi,
-            Color::Css(_) => CodeKind::Rgb,
-            Color::Xterm(_) => CodeKind::Xterm,
-            Color::Rgb(_) => CodeKind::Rgb,
+            Color::Ansi(_) => ArgsKind::Ansi,
+            Color::Css(_) => ArgsKind::Rgb,
+            Color::Xterm(_) => ArgsKind::Xterm,
+            Color::Rgb(_) => ArgsKind::Rgb,
         }
     }
 
-    fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Color::Ansi(color) => color.fmt_foreground_code(f),
-            Color::Css(color) => color.fmt_foreground_code(f),
-            Color::Xterm(color) => color.fmt_foreground_code(f),
-            Color::Rgb(color) => color.fmt_background_code(f),
+            Color::Ansi(color) => color.fmt_foreground_args(f),
+            Color::Css(color) => color.fmt_foreground_args(f),
+            Color::Xterm(color) => color.fmt_foreground_args(f),
+            Color::Rgb(color) => color.fmt_background_args(f),
         }
     }
 
-    fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_background_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Color::Ansi(color) => color.fmt_background_code(f),
-            Color::Css(color) => color.fmt_background_code(f),
-            Color::Xterm(color) => color.fmt_background_code(f),
-            Color::Rgb(color) => color.fmt_background_code(f),
+            Color::Ansi(color) => color.fmt_background_args(f),
+            Color::Css(color) => color.fmt_background_args(f),
+            Color::Xterm(color) => color.fmt_background_args(f),
+            Color::Rgb(color) => color.fmt_background_args(f),
         }
     }
 
-    fn fmt_underline_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_underline_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Color::Ansi(color) => color.fmt_underline_code(f),
-            Color::Css(color) => color.fmt_underline_code(f),
-            Color::Xterm(color) => color.fmt_underline_code(f),
-            Color::Rgb(color) => color.fmt_underline_code(f),
+            Color::Ansi(color) => color.fmt_underline_args(f),
+            Color::Css(color) => color.fmt_underline_args(f),
+            Color::Xterm(color) => color.fmt_underline_args(f),
+            Color::Rgb(color) => color.fmt_underline_args(f),
         }
     }
 
@@ -243,15 +243,15 @@ impl WriteColor for Color {
 
 impl seal::Seal for core::convert::Infallible {}
 impl WriteColor for core::convert::Infallible {
-    fn fmt_foreground_code(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_foreground_args(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {}
     }
 
-    fn fmt_background_code(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_background_args(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {}
     }
 
-    fn fmt_underline_code(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_underline_args(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {}
     }
 }
@@ -264,7 +264,7 @@ pub enum Kind {
 }
 
 #[doc(hidden)]
-pub enum CodeKind {
+pub enum ArgsKind {
     Ansi,
     Xterm,
     Rgb,

@@ -66,14 +66,14 @@ macro_rules! Effect {
             }
 
             #[inline]
-            fn apply_code(self) -> &'static str {
+            fn apply_args(self) -> &'static str {
                 match self {
                     $(Self::$name => apply::$name,)*
                 }
             }
 
             #[inline]
-            fn clear_code(self) -> &'static str {
+            fn clear_args(self) -> &'static str {
                 match self {
                     $(Self::$name => disable::$name,)*
                 }
@@ -461,8 +461,8 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             if let Some(color) = self.underline_color.get() {
                 assert!(
                     matches!(
-                        color.code_kind(),
-                        crate::CodeKind::Xterm | crate::CodeKind::Rgb
+                        color.args_kind(),
+                        crate::ArgsKind::Xterm | crate::ArgsKind::Rgb
                     ),
                     "Cannot use background color with non-xterm or rgb color, tried to use with: {}",
                     core::any::type_name::<U::Color>()
@@ -538,20 +538,20 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 
         if let Some(fg) = self.foreground.get() {
             semicolon = true;
-            fg.fmt_foreground_code(f)?;
+            fg.fmt_foreground_args(f)?;
         }
 
         if let Some(bg) = self.background.get() {
             semi!();
             semicolon = true;
-            bg.fmt_background_code(f)?;
+            bg.fmt_background_args(f)?;
         }
 
         if !self.effects.data.is_power_of_two() {
             self.effects.try_for_each(|effect| {
                 semi!();
                 semicolon = true;
-                f.write_str(effect.apply_code())?;
+                f.write_str(effect.apply_args())?;
                 Ok(())
             })?;
         }
@@ -635,20 +635,20 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 
         if self.foreground.get().is_some() {
             semicolon = true;
-            ansi::Default.fmt_foreground_code(f)?;
+            ansi::Default.fmt_foreground_args(f)?;
         }
 
         if self.background.get().is_some() {
             semi!();
             semicolon = true;
-            ansi::Default.fmt_background_code(f)?;
+            ansi::Default.fmt_background_args(f)?;
         }
 
         if !self.effects.data.is_power_of_two() {
             self.effects.try_for_each(|effect| {
                 semi!();
                 semicolon = true;
-                f.write_str(effect.clear_code())?;
+                f.write_str(effect.clear_args())?;
                 Ok(())
             })?;
         }
