@@ -40,6 +40,16 @@ macro_rules! Effect {
             $(pub const $name: &str = stringify!($clear);)*
         }
 
+        #[allow(non_upper_case_globals)]
+        mod apply_escape {
+            $(pub const $name: &str = concat!("\x1b[", stringify!($apply), "m");)*
+        }
+
+        #[allow(non_upper_case_globals)]
+        mod disable_escape {
+            $(pub const $name: &str = concat!("\x1b[", stringify!($clear), "m");)*
+        }
+
         impl Effect {
             fn decode(x: u8) -> Self {
                 #[cold]
@@ -54,15 +64,31 @@ macro_rules! Effect {
                 }
             }
 
+            #[inline]
             fn apply_code(self) -> &'static str {
                 match self {
                     $(Self::$name => apply::$name,)*
                 }
             }
 
+            #[inline]
             fn clear_code(self) -> &'static str {
                 match self {
                     $(Self::$name => disable::$name,)*
+                }
+            }
+
+            #[inline]
+            fn apply_escape(self) -> &'static str {
+                match self {
+                    $(Self::$name => apply_escape::$name,)*
+                }
+            }
+
+            #[inline]
+            fn clear_escape(self) -> &'static str {
+                match self {
+                    $(Self::$name => disable_escape::$name,)*
                 }
             }
 
@@ -350,21 +376,35 @@ Effect! {
 impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     fn fmt_apply(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match (F::KIND, B::KIND) {
-            (_, crate::Kind::MaybeSome)
-            | (crate::Kind::MaybeSome, _)
-            | (crate::Kind::NeverSome, crate::Kind::NeverSome) => (),
+            (_, crate::Kind::MaybeSome) | (crate::Kind::MaybeSome, _) => (),
+            (crate::Kind::NeverSome, crate::Kind::NeverSome) => {
+                if self.effects.data.is_power_of_two() {
+                    let effect = self.effects.iter().next().unwrap();
+                    return f.write_str(effect.apply_escape());
+                }
+            }
             (crate::Kind::AlwaysSome, crate::Kind::AlwaysSome) => {
                 // for now
             }
             (crate::Kind::AlwaysSome, crate::Kind::NeverSome) => {
-                if self.effects.is_plain() {
+                if self.effects.data.count_ones() <= 1 {
+                    if self.effects.data.is_power_of_two() {
+                        let effect = self.effects.iter().next().unwrap();
+                        f.write_str(effect.apply_escape())?;
+                    }
+
                     if let Some(fg) = self.foreground.get() {
                         return fg.fmt_foreground(f);
                     }
                 }
             }
             (crate::Kind::NeverSome, crate::Kind::AlwaysSome) => {
-                if self.effects.is_plain() {
+                if self.effects.data.count_ones() <= 1 {
+                    if self.effects.data.is_power_of_two() {
+                        let effect = self.effects.iter().next().unwrap();
+                        f.write_str(effect.apply_escape())?;
+                    }
+
                     if let Some(bg) = self.background.get() {
                         return bg.fmt_background(f);
                     }
@@ -412,19 +452,33 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
 
     fn fmt_clear(&self, f: &mut fmt::Formatter<'_>) -> core::fmt::Result {
         match (F::KIND, B::KIND) {
-            (_, crate::Kind::MaybeSome)
-            | (crate::Kind::MaybeSome, _)
-            | (crate::Kind::NeverSome, crate::Kind::NeverSome) => (),
+            (_, crate::Kind::MaybeSome) | (crate::Kind::MaybeSome, _) => (),
+            (crate::Kind::NeverSome, crate::Kind::NeverSome) => {
+                if self.effects.data.is_power_of_two() {
+                    let effect = self.effects.iter().next().unwrap();
+                    return f.write_str(effect.clear_escape());
+                }
+            }
             (crate::Kind::AlwaysSome, crate::Kind::AlwaysSome) => {
                 // for now
             }
             (crate::Kind::AlwaysSome, crate::Kind::NeverSome) => {
-                if self.effects.is_plain() {
+                if self.effects.data.count_ones() <= 1 {
+                    if self.effects.data.is_power_of_two() {
+                        let effect = self.effects.iter().next().unwrap();
+                        f.write_str(effect.clear_escape())?;
+                    }
+
                     return ansi::Default.fmt_foreground(f);
                 }
             }
             (crate::Kind::NeverSome, crate::Kind::AlwaysSome) => {
-                if self.effects.is_plain() {
+                if self.effects.data.count_ones() <= 1 {
+                    if self.effects.data.is_power_of_two() {
+                        let effect = self.effects.iter().next().unwrap();
+                        f.write_str(effect.clear_escape())?;
+                    }
+
                     return ansi::Default.fmt_background(f);
                 }
             }
