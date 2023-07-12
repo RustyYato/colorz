@@ -26,6 +26,13 @@ macro_rules! Css {
 
         impl CssColor {
             #[inline]
+            pub const fn code(self) -> &'static str {
+                match self {
+                    $(Self::$name => $name::CODE,)*
+                }
+            }
+
+            #[inline]
             pub const fn foreground_code(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_CODE,)*
@@ -63,6 +70,11 @@ macro_rules! Css {
             }
 
             #[inline]
+            fn code(&self) -> &'static str {
+                (*self).foreground_code()
+            }
+
+            #[inline]
             fn foreground_code(&self) -> &'static str {
                 (*self).foreground_code()
             }
@@ -88,6 +100,8 @@ macro_rules! Css {
                 pub const DYNAMIC: CssColor = CssColor::$name;
                 pub const RGB: RGB<$r, $g, $b> = RGB;
 
+                pub const CODE: &'static str = RGB::<$r, $g, $b>::CODE;
+
                 pub const FOREGROUND_CODE: &'static str = RGB::<$r, $g, $b>::FOREGROUND_CODE;
                 pub const BACKGROUND_CODE: &'static str = RGB::<$r, $g, $b>::BACKGROUND_CODE;
 
@@ -101,6 +115,11 @@ macro_rules! Css {
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
                     Self::DYNAMIC
+                }
+
+                #[inline]
+                fn code(&self) -> &'static str {
+                    Self::CODE
                 }
 
                 #[inline]

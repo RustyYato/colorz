@@ -4,13 +4,14 @@ use crate::{ansi, Color, OptionalColor, WriteColor};
 
 #[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Style<F = Option<Color>, B = Option<Color>> {
+pub struct Style<F = Option<Color>, B = Option<Color>, U = Option<Color>> {
     pub foreground: F,
     pub background: B,
+    pub underline_color: U,
     pub effects: EffectFlags,
 }
 
-const _: [(); core::mem::size_of::<Style>()] = [(); 10];
+const _: [(); core::mem::size_of::<Style>()] = [(); 14];
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EffectFlags {
@@ -97,7 +98,7 @@ macro_rules! Effect {
             }
         }
 
-        impl<F, B> Style<F, B> {$(
+        impl<F, B, U> Style<F, B, U> {$(
             #[inline(always)]
             pub fn $set_func(self) -> Self {
                 self.with(Effect::$name)
@@ -125,6 +126,11 @@ impl EffectFlags {
     #[inline(always)]
     pub const fn is(self, opt: Effect) -> bool {
         self.data & opt.mask() != 0
+    }
+
+    #[inline(always)]
+    pub const fn is_any(self, opt: EffectFlags) -> bool {
+        self.data & opt.data != 0
     }
 
     #[inline(always)]
@@ -174,12 +180,13 @@ impl EffectFlags {
     }
 }
 
-impl Style<crate::NoColor, crate::NoColor> {
+impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
     #[inline(always)]
     pub const fn new() -> Self {
         Self {
             foreground: crate::NoColor,
             background: crate::NoColor,
+            underline_color: crate::NoColor,
             effects: EffectFlags::new(),
         }
     }
@@ -209,30 +216,43 @@ impl Style<crate::NoColor, crate::NoColor> {
     }
 }
 
-impl<F, B> Style<F, B> {
+impl<F, B, U> Style<F, B, U> {
     #[inline(always)]
-    pub fn foreground<T>(self, color: T) -> Style<T, B> {
+    pub fn foreground<T>(self, color: T) -> Style<T, B, U> {
         Style {
             foreground: color,
             background: self.background,
+            underline_color: self.underline_color,
             effects: self.effects,
         }
     }
 
     #[inline(always)]
-    pub fn background<T>(self, color: T) -> Style<F, T> {
+    pub fn background<T>(self, color: T) -> Style<F, T, U> {
         Style {
             foreground: self.foreground,
             background: color,
+            underline_color: self.underline_color,
             effects: self.effects,
         }
     }
 
     #[inline(always)]
-    pub(crate) fn as_ref(&self) -> Style<crate::Ref<F>, crate::Ref<B>> {
+    pub fn underline_color<T>(self, color: T) -> Style<F, B, T> {
+        Style {
+            foreground: self.foreground,
+            background: self.background,
+            underline_color: color,
+            effects: self.effects,
+        }
+    }
+
+    #[inline(always)]
+    pub(crate) fn as_ref(&self) -> Style<crate::Ref<F>, crate::Ref<B>, crate::Ref<U>> {
         Style {
             foreground: crate::Ref(&self.foreground),
             background: crate::Ref(&self.background),
+            underline_color: crate::Ref(&self.underline_color),
             effects: self.effects,
         }
     }
@@ -244,6 +264,7 @@ impl<F: Copy, B: Copy> Style<F, B> {
         Style {
             foreground: color,
             background: self.background,
+            underline_color: self.underline_color,
             effects: self.effects,
         }
     }
@@ -253,12 +274,23 @@ impl<F: Copy, B: Copy> Style<F, B> {
         Style {
             foreground: self.foreground,
             background: color,
+            underline_color: self.underline_color,
+            effects: self.effects,
+        }
+    }
+
+    #[inline(always)]
+    pub fn const_underline_color<T>(self, color: T) -> Style<F, B, T> {
+        Style {
+            foreground: self.foreground,
+            background: self.background,
+            underline_color: color,
             effects: self.effects,
         }
     }
 }
 
-impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
+impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     #[inline(always)]
     pub fn is_plain(&self) -> bool {
         self.effects.is_plain()
@@ -279,7 +311,7 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     }
 }
 
-impl<F, B> Style<F, B> {
+impl<F, B, U> Style<F, B, U> {
     #[inline(always)]
     pub fn effects<I: IntoIterator>(self, flags: I) -> Self
     where
@@ -326,12 +358,13 @@ impl<F, B> Style<F, B> {
     }
 }
 
-impl<F: Copy, B: Copy> Style<F, B> {
+impl<F: Copy, B: Copy, U: Copy> Style<F, B, U> {
     #[inline(always)]
     pub const fn const_with_effects(self, effects: EffectFlags) -> Self {
         Style {
             foreground: self.foreground,
             background: self.background,
+            underline_color: self.underline_color,
             effects,
         }
     }
@@ -373,8 +406,18 @@ Effect! {
     SubScript 73 75 -> subscript,
 }
 
-impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
+const ANY_UNDERLINE: EffectFlags = EffectFlags::new()
+    .with(Effect::Underline)
+    .with(Effect::DoubleUnderline);
+
+impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     fn fmt_apply(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.effects.is_any(ANY_UNDERLINE) {
+            if let Some(color) = self.underline_color.get() {
+                color.fmt_underline(f)?
+            }
+        }
+
         match (F::KIND, B::KIND) {
             (_, crate::Kind::MaybeSome) | (crate::Kind::MaybeSome, _) => (),
             (crate::Kind::NeverSome, crate::Kind::NeverSome) => {
@@ -468,6 +511,10 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     }
 
     fn fmt_clear(&self, f: &mut fmt::Formatter<'_>) -> core::fmt::Result {
+        if self.effects.is_any(ANY_UNDERLINE) && self.underline_color.get().is_some() {
+            f.write_str("\x1b[59m")?
+        }
+
         match (F::KIND, B::KIND) {
             (_, crate::Kind::MaybeSome) | (crate::Kind::MaybeSome, _) => (),
             (crate::Kind::NeverSome, crate::Kind::NeverSome) => {
@@ -561,18 +608,18 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     }
 
     pub fn apply(self) -> impl core::fmt::Display + core::fmt::Debug {
-        struct Prefix<F, B> {
-            style: Style<F, B>,
+        struct Prefix<F, B, U> {
+            style: Style<F, B, U>,
         }
 
-        impl<F: OptionalColor, B: OptionalColor> core::fmt::Display for Prefix<F, B> {
+        impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> core::fmt::Display for Prefix<F, B, U> {
             #[inline]
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.style.fmt_apply(f)
             }
         }
 
-        impl<F: OptionalColor, B: OptionalColor> core::fmt::Debug for Prefix<F, B> {
+        impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> core::fmt::Debug for Prefix<F, B, U> {
             #[inline]
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.style.fmt_apply(f)
@@ -583,18 +630,18 @@ impl<F: OptionalColor, B: OptionalColor> Style<F, B> {
     }
 
     pub fn clear(self) -> impl core::fmt::Display + core::fmt::Debug {
-        struct Suffix<F, B> {
-            style: Style<F, B>,
+        struct Suffix<F, B, U> {
+            style: Style<F, B, U>,
         }
 
-        impl<F: OptionalColor, B: OptionalColor> core::fmt::Display for Suffix<F, B> {
+        impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> core::fmt::Display for Suffix<F, B, U> {
             #[inline]
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.style.fmt_clear(f)
             }
         }
 
-        impl<F: OptionalColor, B: OptionalColor> core::fmt::Debug for Suffix<F, B> {
+        impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> core::fmt::Debug for Suffix<F, B, U> {
             #[inline]
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.style.fmt_clear(f)

@@ -15,9 +15,9 @@ mod value;
 pub mod xterm;
 
 #[non_exhaustive]
-pub struct StyledValue<T, F = NoColor, B = NoColor> {
+pub struct StyledValue<T, F = NoColor, B = NoColor, U = NoColor> {
     pub value: T,
-    pub style: Style<F, B>,
+    pub style: Style<F, B, U>,
     pub stream: Stream,
 }
 
@@ -52,6 +52,8 @@ pub trait AnsiColorCode {
 
     fn into_dynamic(self) -> Self::Dynamic;
 
+    fn code(&self) -> &'static str;
+
     fn foreground_code(&self) -> &'static str;
 
     fn background_code(&self) -> &'static str;
@@ -62,6 +64,10 @@ pub trait AnsiColorCode {
 }
 
 impl<C: AnsiColorCode> WriteColor for C {
+    fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.code())
+    }
+
     fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.foreground_code())
     }
@@ -80,6 +86,8 @@ impl<C: AnsiColorCode> WriteColor for C {
 }
 
 pub trait WriteColor {
+    fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+
     fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
     fn fmt_background_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
@@ -95,9 +103,24 @@ pub trait WriteColor {
         self.fmt_background_code(f)?;
         f.write_str("m")
     }
+
+    fn fmt_underline(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("\x1b[58;")?;
+        self.fmt_code(f)?;
+        f.write_str("m")
+    }
 }
 
 impl WriteColor for Color {
+    fn fmt_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Color::Ansi(color) => color.fmt_code(f),
+            Color::Css(color) => color.fmt_code(f),
+            Color::Xterm(color) => color.fmt_code(f),
+            Color::Rgb(color) => color.fmt_code(f),
+        }
+    }
+
     fn fmt_foreground_code(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_foreground_code(f),
@@ -133,9 +156,22 @@ impl WriteColor for Color {
             Color::Rgb(color) => color.fmt_background(f),
         }
     }
+
+    fn fmt_underline(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Color::Ansi(color) => color.fmt_underline(f),
+            Color::Css(color) => color.fmt_underline(f),
+            Color::Xterm(color) => color.fmt_underline(f),
+            Color::Rgb(color) => color.fmt_underline(f),
+        }
+    }
 }
 
 impl WriteColor for core::convert::Infallible {
+    fn fmt_code(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match *self {}
+    }
+
     fn fmt_foreground_code(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {}
     }

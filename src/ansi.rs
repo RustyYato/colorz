@@ -64,6 +64,11 @@ macro_rules! AnsiColor {
             }
 
             #[inline]
+            fn code(&self) -> &'static str {
+                ""
+            }
+
+            #[inline]
             fn foreground_code(&self) -> &'static str {
                 (*self).foreground_code()
             }
@@ -101,6 +106,11 @@ macro_rules! AnsiColor {
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
                     Self::DYNAMIC
+                }
+
+                #[inline]
+                fn code(&self) -> &'static str {
+                    (*self).foreground_code()
                 }
 
                 #[inline]

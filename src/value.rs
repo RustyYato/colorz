@@ -2,8 +2,8 @@ use core::fmt::{self, Display};
 
 use crate::{ansi, Effect, OptionalColor, Stream, Style, StyledValue};
 
-impl<T, F, B> StyledValue<T, F, B> {
-    pub const fn new(value: T, style: Style<F, B>, stream: Stream) -> Self {
+impl<T, F, B, U> StyledValue<T, F, B, U> {
+    pub const fn new(value: T, style: Style<F, B, U>, stream: Stream) -> Self {
         Self {
             value,
             style,
@@ -78,9 +78,9 @@ macro_rules! AnsiColorMethods {
             })*
         }
 
-        impl<T, F, B> StyledValue<T, F, B> {
+        impl<T, F, B, U> StyledValue<T, F, B, U> {
             #[inline]
-            pub fn color<C>(self, color: C) -> StyledValue<T, C, B> {
+            pub fn color<C>(self, color: C) -> StyledValue<T, C, B, U> {
                 StyledValue {
                     value: self.value,
                     style: self.style.foreground(color),
@@ -89,7 +89,7 @@ macro_rules! AnsiColorMethods {
             }
 
             #[inline]
-            pub fn on_color<C>(self, color: C) -> StyledValue<T, F, C> {
+            pub fn on_color<C>(self, color: C) -> StyledValue<T, F, C, U> {
                 StyledValue {
                     value: self.value,
                     style: self.style.background(color),
@@ -97,7 +97,15 @@ macro_rules! AnsiColorMethods {
                 }
             }
 
-            $(#[inline] pub fn $fun(self) -> StyledValue<T, ansi::$color, B> {
+            pub fn underline_color<C>(self, color: C) -> StyledValue<T ,F, B, C> {
+                StyledValue {
+                    value: self.value,
+                    style: self.style.underline_color(color),
+                    stream: self.stream,
+                }
+            }
+
+            $(#[inline] pub fn $fun(self) -> StyledValue<T, ansi::$color, B, U> {
                 StyledValue {
                     value: self.value,
                     style: self.style.foreground(ansi::$color),
@@ -105,7 +113,7 @@ macro_rules! AnsiColorMethods {
                 }
             })*
 
-            $(#[inline] pub fn $on_fun(self) -> StyledValue<T, F, ansi::$color> {
+            $(#[inline] pub fn $on_fun(self) -> StyledValue<T, F, ansi::$color, U> {
                 StyledValue {
                     value: self.value,
                     style: self.style.background(ansi::$color),
@@ -113,7 +121,7 @@ macro_rules! AnsiColorMethods {
                 }
             })*
 
-            $(#[inline] pub fn $effect_fun(self) -> StyledValue<T, F, B> {
+            $(#[inline] pub fn $effect_fun(self) -> StyledValue<T, F, B, U> {
                 StyledValue {
                     value: self.value,
                     style: self.style.with(Effect::$effect),
@@ -176,7 +184,7 @@ AnsiColorMethods! {
     )
 }
 
-impl<T, F: OptionalColor, B: OptionalColor> StyledValue<T, F, B> {
+impl<T, F: OptionalColor, B: OptionalColor, U: OptionalColor> StyledValue<T, F, B, U> {
     pub fn fmt_with(
         &self,
         fmt: &mut fmt::Formatter<'_>,
@@ -197,8 +205,8 @@ impl<T, F: OptionalColor, B: OptionalColor> StyledValue<T, F, B> {
 
 macro_rules! fmt_impl {
     ($name:ident) => {
-        impl<T: fmt::$name, F: OptionalColor, B: OptionalColor> fmt::$name
-            for StyledValue<T, F, B>
+        impl<T: fmt::$name, F: OptionalColor, B: OptionalColor, U: OptionalColor> fmt::$name
+            for StyledValue<T, F, B, U>
         {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.fmt_with(f, fmt::$name::fmt)

@@ -56,6 +56,13 @@ macro_rules! XTerm {
             }
 
             #[inline]
+            pub const fn code(self) -> &'static str {
+                match self {
+                    $(Self::$name => $name::CODE,)*
+                }
+            }
+
+            #[inline]
             pub const fn foreground_code(self) -> &'static str {
                 match self {
                     $(Self::$name => $name::FOREGROUND_CODE,)*
@@ -93,6 +100,11 @@ macro_rules! XTerm {
             }
 
             #[inline]
+            fn code(&self) -> &'static str {
+                (*self).code()
+            }
+
+            #[inline]
             fn foreground_code(&self) -> &'static str {
                 (*self).foreground_code()
             }
@@ -118,6 +130,8 @@ macro_rules! XTerm {
             impl $name {
                 pub const DYNAMIC: XtermColor = XtermColor::$name;
 
+                pub const CODE: &'static str = concat!("5;", stringify!($code));
+
                 pub const FOREGROUND_CODE: &'static str = concat!("38;5;", stringify!($code));
                 pub const BACKGROUND_CODE: &'static str = concat!("48;5;", stringify!($code));
 
@@ -131,6 +145,11 @@ macro_rules! XTerm {
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
                     Self::DYNAMIC
+                }
+
+                #[inline]
+                fn code(&self) -> &'static str {
+                    Self::CODE
                 }
 
                 #[inline]
