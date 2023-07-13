@@ -73,7 +73,7 @@ macro_rules! AnsiColorMethods {
             }
 
             /// Changes the background color
-            fn on_bg<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, C> {
+            fn bg<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, C> {
                 self.style().bg(color)
             }
 

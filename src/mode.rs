@@ -16,7 +16,7 @@
 //! the color types directly to color values will always be supported (even with `strip-colors`).
 
 #[cfg(doc)]
-use crate::{Stream, StyledValue};
+use crate::StyledValue;
 
 use core::sync::atomic::AtomicU8;
 

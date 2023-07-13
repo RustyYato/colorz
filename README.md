@@ -46,24 +46,24 @@ struct MyType {
 // will print `hello world` in red
 println!("{}", "hello world".red());
 // will print `100` on an aquamarine background
-println!("{}", 100.on_color(css::Aquamarine));
+println!("{}", 100.bg(css::Aquamarine));
 // will print `hello world` on a with an Aqua underline
 println!("{:?}", MyType { value: "hello world".into() }.underline_color(xterm::Aqua).underline());
 ```
 
 With conditional formatting per value
 ```rust
-use colorize::{Colorize, xterm, Stream::*};
+use colorize::{Colorize, xterm, mode::Stream::*};
 
-// will print `hello world` in red if Stdin points to a terminal
-println!("{}", "hello world".red().stream(Stdin));
+// will print `hello world` in red if Stdout points to a terminal
+println!("{}", "hello world".red().stream(Stdout));
 ```
 
 Easily turn it off at any time
 ```rust
-use colorize::{Colorize, xterm, Stream::*};
+use colorize::{Colorize, xterm, mode::Stream::*};
 
-colorize::mode::set(colorize::mode::Mode::Never);
+colorize::mode::set_coloring_mode(colorize::mode::Mode::Never);
 
 // doesn't style the value
 println!("{}", "hello world".red());
