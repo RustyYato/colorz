@@ -135,11 +135,19 @@ impl Stream {
 
 /// Set the global coloring mode (this allows forcing colors on or off despite stream preferences)
 pub fn set_coloring_mode(mode: Mode) {
+    if cfg!(feature = "strip-colors") {
+        return;
+    }
+
     COLORING_MODE.store(Mode::encode(mode), core::sync::atomic::Ordering::Release)
 }
 
 /// Get the global coloring mode
 pub fn get_coloring_mode() -> Mode {
+    if cfg!(feature = "strip-colors") {
+        return Mode::Never;
+    }
+
     Mode::decode(COLORING_MODE.load(core::sync::atomic::Ordering::Acquire))
 }
 
@@ -157,6 +165,10 @@ pub fn get_default_stream() -> Stream {
 }
 
 pub(crate) fn should_color(stream: Option<Stream>, kinds: &[ColorKind]) -> bool {
+    if cfg!(feature = "strip-colors") {
+        return false;
+    }
+
     match get_coloring_mode() {
         Mode::Always => return true,
         Mode::Never => return false,

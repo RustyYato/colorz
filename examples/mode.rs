@@ -1,6 +1,6 @@
 use colorize::{
     mode,
-    mode::Stream::{AlwaysColor, Stderr},
+    mode::Stream::{AlwaysColor, NeverColor, Stderr, Stdout},
     Colorize,
 };
 
@@ -27,13 +27,22 @@ fn main() {
 
     println!("color mode=always");
     mode::set_coloring_mode(mode::Mode::Always);
-    println!("{}", "blue".blue());
+    println!("{}", "blue stderr".blue());
+    println!("{}", "blue stdout".blue().stream(Stdout));
+    println!("{}", "blue always".blue().stream(AlwaysColor));
+    println!("{}", "blue never".blue().stream(NeverColor));
 
     println!("color mode=detect");
     mode::set_coloring_mode(mode::Mode::Detect);
-    println!("{}", "blue".blue());
+    println!("{}", "blue stderr".blue());
+    println!("{}", "blue stdout".blue().stream(Stdout));
+    println!("{}", "blue always".blue().stream(AlwaysColor));
+    println!("{}", "blue never".blue().stream(NeverColor));
 
     println!("color mode=never");
     mode::set_coloring_mode(mode::Mode::Never);
-    println!("{}", "blue".blue());
+    println!("{}", "blue stderr".blue());
+    println!("{}", "blue stdout".blue().stream(Stdout));
+    println!("{}", "blue always".blue().stream(AlwaysColor));
+    println!("{}", "blue never".blue().stream(NeverColor));
 }
