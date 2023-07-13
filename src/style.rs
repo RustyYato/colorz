@@ -100,29 +100,33 @@ macro_rules! Effect {
                 }
             }
 
+            /// The ANSI effect args
             #[inline]
-            fn apply_args(self) -> &'static str {
+            pub fn apply_args(self) -> &'static str {
                 match self {
                     $(Self::$name => apply::$name,)*
                 }
             }
 
+            /// The ANSI effect removal args
             #[inline]
-            fn clear_args(self) -> &'static str {
+            pub fn clear_args(self) -> &'static str {
                 match self {
                     $(Self::$name => disable::$name,)*
                 }
             }
 
+            /// The ANSI effect sequence
             #[inline]
-            fn apply_escape(self) -> &'static str {
+            pub fn apply_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => apply_escape::$name,)*
                 }
             }
 
+            /// The ANSI effect removal sequence
             #[inline]
-            fn clear_escape(self) -> &'static str {
+            pub fn clear_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => disable_escape::$name,)*
                 }
