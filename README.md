@@ -66,6 +66,27 @@ Then you will see `hello world` in your default terminal color.
 finally if `std` is enabled, then if the stream is a terminal then all coloring types will be used.
     and if the stream isn't a terminal then no coloring will be chosen.
 
+## Coloring Mode
+
+There are many ways to specify the coloring mode for `colorize`, and it may not be obvious how
+they interact, so here is a precedence list. To figure out how colorize chooses to colorize, go
+down the list, and the first element that applies will be selected.
+
+* if the feature flag `strip-colors` is enabled -> NO COLORING
+* if the global coloring mode is `Mode::Always` -> DO COLOR
+* if the global coloring mode is `Mode::NEVER`  -> NO COLORING
+* if the per-value stream if set to
+    * `Stream::AlwaysColor` -> DO COLOR
+    * `Stream::NeverColor` -> NO COLORING
+    * `Stream::Stdout`/`Stream::Stderr` -> detect coloring using `std` or `support-color` (see docs on feature flags for details)
+* if global stream is set to
+    * `Stream::AlwaysColor` -> DO COLOR
+    * `Stream::NeverColor` -> NO COLORING
+    * `Stream::Stdout`/`Stream::Stderr` -> detect coloring using `std` or `support-color` (see docs on feature flags for details)
+
+The global stream is always set to one of the possible `Stream` values,
+so one option on the list will always be chosen.
+
 ## Examples
 
 Format any value
