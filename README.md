@@ -95,6 +95,20 @@ Using `Style::apply`/`Style::clear` directly will not respect the coloring mode,
 coloring regardless of the current coloring mode. You can use `Style::should_color` to detect if a given style
 should be used based on the current coloring mode.
 
+```rust
+use colorize::{Style, xterm, mode::Stream};
+
+let style = Style::new().fg(xterm::Aquamarine);
+
+if style.should_color(Stream::AlwaysColor) {
+    println!("{}style if global is set{}", style.apply(), style.clear());
+}
+
+if style.should_color(None) {
+    println!("{}style if global is set or default stream is set{}", style.apply(), style.clear());
+}
+```
+
 ## Examples
 
 Format any value

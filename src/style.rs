@@ -543,9 +543,9 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     /// Should you color based on the current coloring mode
     ///
     /// See `Coloring Mode` in the crate docs for details
-    pub fn should_color(&self, stream: Option<Stream>) -> bool {
+    pub fn should_color(&self, stream: impl Into<Option<Stream>>) -> bool {
         crate::mode::should_color(
-            stream,
+            stream.into(),
             &[
                 self.foreground.color_kind(),
                 self.background.color_kind(),
