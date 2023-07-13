@@ -135,39 +135,41 @@ macro_rules! Css {
         impl ColorSpec for CssColor {
             type Dynamic = Self;
 
+            const KIND: crate::mode::ColorKind = crate::mode::ColorKind::Rgb;
+
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
                 self
             }
 
             #[inline]
-            fn foreground_args(&self) -> &'static str {
-                (*self).foreground_args()
+            fn foreground_args(self) -> &'static str {
+                self.foreground_args()
             }
 
             #[inline]
-            fn background_args(&self) -> &'static str {
-                (*self).background_args()
+            fn background_args(self) -> &'static str {
+                self.background_args()
             }
 
             #[inline]
-            fn underline_args(&self) -> &'static str {
-                (*self).underline_args()
+            fn underline_args(self) -> &'static str {
+                self.underline_args()
             }
 
             #[inline]
-            fn foreground_escape(&self) -> &'static str {
-                (*self).foreground_escape()
+            fn foreground_escape(self) -> &'static str {
+                self.foreground_escape()
             }
 
             #[inline]
-            fn background_escape(&self) -> &'static str {
-                (*self).background_escape()
+            fn background_escape(self) -> &'static str {
+                self.background_escape()
             }
 
             #[inline]
-            fn underline_escape(&self) -> &'static str {
-                (*self).underline_escape()
+            fn underline_escape(self) -> &'static str {
+                self.underline_escape()
             }
         }
 
@@ -200,38 +202,40 @@ macro_rules! Css {
             impl ColorSpec for $name {
                 type Dynamic = CssColor;
 
+                const KIND: crate::mode::ColorKind = crate::mode::ColorKind::Rgb;
+
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
                     Self::DYNAMIC
                 }
 
                 #[inline]
-                fn foreground_args(&self) -> &'static str {
+                fn foreground_args(self) -> &'static str {
                     Self::FOREGROUND_ARGS
                 }
 
                 #[inline]
-                fn background_args(&self) -> &'static str {
+                fn background_args(self) -> &'static str {
                     Self::BACKGROUND_ARGS
                 }
 
                 #[inline]
-                fn underline_args(&self) -> &'static str {
+                fn underline_args(self) -> &'static str {
                     Self::UNDERLINE_ARGS
                 }
 
                 #[inline]
-                fn foreground_escape(&self) -> &'static str {
+                fn foreground_escape(self) -> &'static str {
                     Self::FOREGROUND_ESCAPE
                 }
 
                 #[inline]
-                fn background_escape(&self) -> &'static str {
+                fn background_escape(self) -> &'static str {
                     Self::BACKGROUND_ESCAPE
                 }
 
                 #[inline]
-                fn underline_escape(&self) -> &'static str {
+                fn underline_escape(self) -> &'static str {
                     Self::UNDERLINE_ESCAPE
                 }
             }

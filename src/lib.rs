@@ -29,26 +29,7 @@ pub struct StyledValue<T, F = NoColor, B = NoColor, U = NoColor> {
     /// The style to use
     pub style: Style<F, B, U>,
     /// The stream to use
-    pub stream: Stream,
-}
-
-/// The stream to detect when to color on
-#[non_exhaustive]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Stream {
-    /// Detect via [`std::io::stdout`] if feature `std` is enabled
-    Stdout,
-    /// Detect via [`std::io::stderr`] if feature `std` is enabled
-    Stderr,
-    /// Detect via [`std::io::stdin`] if feature `std` is enabled
-    Stdin,
-    /// Always color, used to pick the coloring mode at runtime for a particular value
-    ///
-    /// The default coloring mode for streams
-    #[default]
-    AlwaysColor,
-    /// Never color, used to pick the coloring mode at runtime for a particular value
-    NeverColor,
+    pub stream: Option<mode::Stream>,
 }
 
 impl<T: ?Sized> Colorize for T {}
@@ -82,81 +63,95 @@ pub trait ColorSpec: seal::Seal {
     /// The runtime version of the color
     type Dynamic;
 
+    /// The color kind of this Color
+    ///
+    /// used to detect wether to color on a given terminal
+    const KIND: mode::ColorKind;
+
     /// Covnert to the runtime version of the color
     fn into_dynamic(self) -> Self::Dynamic;
 
     /// The foreground color arguments
-    fn foreground_args(&self) -> &'static str;
+    fn foreground_args(self) -> &'static str;
 
     /// The background color arguments
-    fn background_args(&self) -> &'static str;
+    fn background_args(self) -> &'static str;
 
     /// The underline color arguments
-    fn underline_args(&self) -> &'static str;
+    fn underline_args(self) -> &'static str;
 
     /// The foreground color sequence
-    fn foreground_escape(&self) -> &'static str;
+    fn foreground_escape(self) -> &'static str;
 
     /// The background color sequence
-    fn background_escape(&self) -> &'static str;
+    fn background_escape(self) -> &'static str;
 
     /// The underline color sequence
-    fn underline_escape(&self) -> &'static str;
+    fn underline_escape(self) -> &'static str;
 }
 
 impl<C: ColorSpec> WriteColor for C {
-    fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn color_kind(self) -> mode::ColorKind {
+        C::KIND
+    }
+
+    fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.foreground_args())
     }
 
-    fn fmt_background_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.background_args())
     }
 
-    fn fmt_underline_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.underline_args())
     }
 
-    fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.foreground_escape())
     }
 
-    fn fmt_background(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.background_escape())
     }
 
-    fn fmt_underline(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.underline_escape())
     }
 }
 
 /// A sealed trait for describing how to write ANSI color args
 pub trait WriteColor: seal::Seal {
+    /// The color kind of this Color
+    ///
+    /// used to detect wether to color on a given terminal
+    fn color_kind(self) -> mode::ColorKind;
+
     /// write the foreground color arguments
-    fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+    fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
     /// write the background color arguments
-    fn fmt_background_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+    fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
     /// write the underline color arguments
-    fn fmt_underline_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+    fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
     /// write the foreground color sequence
-    fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[")?;
         self.fmt_foreground_args(f)?;
         f.write_str("m")
     }
 
     /// write the background color sequence
-    fn fmt_background(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[")?;
         self.fmt_background_args(f)?;
         f.write_str("m")
     }
 
     /// write the underline color sequence
-    fn fmt_underline(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[58;")?;
         self.fmt_underline_args(f)?;
         f.write_str("m")
@@ -165,7 +160,16 @@ pub trait WriteColor: seal::Seal {
 
 impl seal::Seal for Color {}
 impl WriteColor for Color {
-    fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn color_kind(self) -> mode::ColorKind {
+        match self {
+            Color::Ansi(_) => mode::ColorKind::Ansi,
+            Color::Xterm(_) => mode::ColorKind::Xterm,
+            Color::Css(_) => mode::ColorKind::Rgb,
+            Color::Rgb(_) => mode::ColorKind::Rgb,
+        }
+    }
+
+    fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_foreground_args(f),
             Color::Css(color) => color.fmt_foreground_args(f),
@@ -174,7 +178,7 @@ impl WriteColor for Color {
         }
     }
 
-    fn fmt_background_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_background_args(f),
             Color::Css(color) => color.fmt_background_args(f),
@@ -183,7 +187,7 @@ impl WriteColor for Color {
         }
     }
 
-    fn fmt_underline_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_underline_args(f),
             Color::Css(color) => color.fmt_underline_args(f),
@@ -192,7 +196,7 @@ impl WriteColor for Color {
         }
     }
 
-    fn fmt_foreground(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_foreground(f),
             Color::Css(color) => color.fmt_foreground(f),
@@ -201,7 +205,7 @@ impl WriteColor for Color {
         }
     }
 
-    fn fmt_background(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_background(f),
             Color::Css(color) => color.fmt_background(f),
@@ -210,7 +214,7 @@ impl WriteColor for Color {
         }
     }
 
-    fn fmt_underline(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_underline(f),
             Color::Css(color) => color.fmt_underline(f),
@@ -222,16 +226,20 @@ impl WriteColor for Color {
 
 impl seal::Seal for core::convert::Infallible {}
 impl WriteColor for core::convert::Infallible {
-    fn fmt_foreground_args(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match *self {}
+    fn color_kind(self) -> mode::ColorKind {
+        match self {}
     }
 
-    fn fmt_background_args(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match *self {}
+    fn fmt_foreground_args(self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {}
     }
 
-    fn fmt_underline_args(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match *self {}
+    fn fmt_background_args(self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {}
+    }
+
+    fn fmt_underline_args(self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {}
     }
 }
 
@@ -251,7 +259,14 @@ pub trait OptionalColor: seal::Seal {
     const KIND: Kind = Kind::MaybeSome;
 
     /// Get the color value
-    fn get(&self) -> Option<Self::Color>;
+    fn get(self) -> Option<Self::Color>;
+
+    /// Get the color value
+    fn color_kind(self) -> mode::ColorKind {
+        self.get()
+            .map(WriteColor::color_kind)
+            .unwrap_or(mode::ColorKind::NoColor)
+    }
 }
 
 impl<C: WriteColor> OptionalColor for C {
@@ -260,8 +275,8 @@ impl<C: WriteColor> OptionalColor for C {
     const KIND: Kind = Kind::AlwaysSome;
 
     #[inline]
-    fn get(&self) -> Option<Self::Color> {
-        Some(*self)
+    fn get(self) -> Option<Self::Color> {
+        Some(self)
     }
 }
 
@@ -270,8 +285,8 @@ impl<C: OptionalColor> OptionalColor for Option<C> {
     type Color = C::Color;
 
     #[inline]
-    fn get(&self) -> Option<Self::Color> {
-        self.as_ref().and_then(C::get)
+    fn get(self) -> Option<Self::Color> {
+        self.and_then(C::get)
     }
 }
 
@@ -282,7 +297,7 @@ impl OptionalColor for NoColor {
     const KIND: Kind = Kind::NeverSome;
 
     #[inline]
-    fn get(&self) -> Option<Self::Color> {
+    fn get(self) -> Option<Self::Color> {
         None
     }
 }

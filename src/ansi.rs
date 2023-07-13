@@ -136,38 +136,40 @@ macro_rules! MkAnsiColor {
         impl ColorSpec for AnsiColor {
             type Dynamic = Self;
 
+            const KIND: crate::mode::ColorKind = crate::mode::ColorKind::Ansi;
+
             #[inline]
             fn into_dynamic(self) -> Self::Dynamic {
                 self
             }
 
             #[inline]
-            fn underline_args(&self) -> &'static str {
+            fn underline_args(self) -> &'static str {
                 self.to_xterm().underline_args()
             }
 
             #[inline]
-            fn foreground_args(&self) -> &'static str {
-                (*self).foreground_args()
+            fn foreground_args(self) -> &'static str {
+                self.foreground_args()
             }
 
             #[inline]
-            fn background_args(&self) -> &'static str {
-                (*self).background_args()
+            fn background_args(self) -> &'static str {
+                self.background_args()
             }
 
             #[inline]
-            fn foreground_escape(&self) -> &'static str {
-                (*self).foreground_escape()
+            fn foreground_escape(self) -> &'static str {
+                self.foreground_escape()
             }
 
             #[inline]
-            fn background_escape(&self) -> &'static str {
-                (*self).background_escape()
+            fn background_escape(self) -> &'static str {
+                self.background_escape()
             }
 
             #[inline]
-            fn underline_escape(&self) -> &'static str {
+            fn underline_escape(self) -> &'static str {
                 self.to_xterm().underline_escape()
             }
         }
@@ -196,38 +198,40 @@ macro_rules! MkAnsiColor {
             impl ColorSpec for $name {
                 type Dynamic = AnsiColor;
 
+                const KIND: crate::mode::ColorKind = crate::mode::ColorKind::Ansi;
+
                 #[inline]
                 fn into_dynamic(self) -> Self::Dynamic {
                     Self::DYNAMIC
                 }
 
                 #[inline]
-                fn foreground_args(&self) -> &'static str {
+                fn foreground_args(self) -> &'static str {
                     Self::FOREGROUND_ARGS
                 }
 
                 #[inline]
-                fn background_args(&self) -> &'static str {
+                fn background_args(self) -> &'static str {
                     Self::BACKGROUND_ARGS
                 }
 
                 #[inline]
-                fn underline_args(&self) -> &'static str {
+                fn underline_args(self) -> &'static str {
                     <xterm_from_code!($xterm)>::UNDERLINE_ARGS
                 }
 
                 #[inline]
-                fn foreground_escape(&self) -> &'static str {
+                fn foreground_escape(self) -> &'static str {
                     Self::FOREGROUND_ESCAPE
                 }
 
                 #[inline]
-                fn background_escape(&self) -> &'static str {
+                fn background_escape(self) -> &'static str {
                     Self::BACKGROUND_ESCAPE
                 }
 
                 #[inline]
-                fn underline_escape(&self) -> &'static str {
+                fn underline_escape(self) -> &'static str {
                     <xterm_from_code!($xterm)>::UNDERLINE_ESCAPE
                 }
             }

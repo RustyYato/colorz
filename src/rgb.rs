@@ -18,15 +18,19 @@ pub struct RgbColor {
 
 impl crate::seal::Seal for RgbColor {}
 impl WriteColor for RgbColor {
-    fn fmt_foreground_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn color_kind(self) -> crate::mode::ColorKind {
+        crate::mode::ColorKind::Rgb
+    }
+
+    fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "38;2;{};{};{}", self.red, self.green, self.blue)
     }
 
-    fn fmt_background_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "48;2;{};{};{}", self.red, self.green, self.blue)
     }
 
-    fn fmt_underline_args(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "58;2;{};{};{}", self.red, self.green, self.blue)
     }
 }
@@ -150,38 +154,40 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> crate::seal::Seal for Rgb<R
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> ColorSpec for Rgb<RED, GREEN, BLUE> {
     type Dynamic = RgbColor;
 
+    const KIND: crate::mode::ColorKind = crate::mode::ColorKind::Rgb;
+
     #[inline]
     fn into_dynamic(self) -> Self::Dynamic {
         Self::DYNAMIC
     }
 
     #[inline]
-    fn foreground_args(&self) -> &'static str {
+    fn foreground_args(self) -> &'static str {
         Self::FOREGROUND_ARGS
     }
 
     #[inline]
-    fn background_args(&self) -> &'static str {
+    fn background_args(self) -> &'static str {
         Self::BACKGROUND_ARGS
     }
 
     #[inline]
-    fn underline_args(&self) -> &'static str {
+    fn underline_args(self) -> &'static str {
         Self::UNDERLINE_ARGS
     }
 
     #[inline]
-    fn foreground_escape(&self) -> &'static str {
+    fn foreground_escape(self) -> &'static str {
         Self::FOREGROUND_ESCAPE
     }
 
     #[inline]
-    fn background_escape(&self) -> &'static str {
+    fn background_escape(self) -> &'static str {
         Self::BACKGROUND_ESCAPE
     }
 
     #[inline]
-    fn underline_escape(&self) -> &'static str {
+    fn underline_escape(self) -> &'static str {
         Self::UNDERLINE_ESCAPE
     }
 }

@@ -1,10 +1,10 @@
 use core::fmt::{self, Display};
 
-use crate::{ansi, Effect, OptionalColor, Stream, Style, StyledValue};
+use crate::{ansi, mode::Stream, Effect, OptionalColor, Style, StyledValue};
 
 impl<T, F, B, U> StyledValue<T, F, B, U> {
     /// Create a new styled value
-    pub const fn new(value: T, style: Style<F, B, U>, stream: Stream) -> Self {
+    pub const fn new(value: T, style: Style<F, B, U>, stream: Option<Stream>) -> Self {
         Self {
             value,
             style,
@@ -28,7 +28,7 @@ macro_rules! AnsiColorMethods {
                 StyledValue {
                     value: self,
                     style: Style::new(),
-                    stream: crate::Stream::AlwaysColor,
+                    stream: None,
                 }
             }
 
@@ -37,7 +37,7 @@ macro_rules! AnsiColorMethods {
                 StyledValue {
                     value: self,
                     style: Style::new(),
-                    stream: crate::Stream::AlwaysColor,
+                    stream: None
                 }
             }
 
@@ -49,7 +49,7 @@ macro_rules! AnsiColorMethods {
                 StyledValue {
                     value: self,
                     style,
-                    stream: crate::Stream::AlwaysColor,
+                    stream: None,
                 }
             }
 
@@ -58,7 +58,7 @@ macro_rules! AnsiColorMethods {
                 StyledValue {
                     value: self,
                     style,
-                    stream: crate::Stream::AlwaysColor,
+                    stream: None,
                 }
             }
 
@@ -124,7 +124,7 @@ macro_rules! AnsiColorMethods {
                 StyledValue {
                     value: self,
                     style: Style::new(),
-                    stream: crate::Stream::AlwaysColor,
+                    stream: None,
                 }
             }
 
@@ -134,7 +134,7 @@ macro_rules! AnsiColorMethods {
                 StyledValue {
                     value: self,
                     style: Style::new(),
-                    stream: crate::Stream::AlwaysColor,
+                    stream: None,
                 }
             }
 
@@ -187,6 +187,13 @@ macro_rules! AnsiColorMethods {
             /// Sets the stream for the given value
             #[inline]
             pub const fn stream(mut self, stream: Stream) -> Self  {
+                self.stream = Some(stream);
+                self
+            }
+
+            /// Sets the stream for the given value
+            #[inline]
+            pub const fn stream_opt(mut self, stream: Option<Stream>) -> Self  {
                 self.stream = stream;
                 self
             }
@@ -289,7 +296,14 @@ impl<T, F: OptionalColor, B: OptionalColor, U: OptionalColor> StyledValue<T, F, 
         fmt: &mut fmt::Formatter<'_>,
         f: impl FnOnce(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
     ) -> fmt::Result {
-        let use_colors = crate::mode::should_color(self.stream);
+        let use_colors = crate::mode::should_color(
+            self.stream,
+            &[
+                self.style.foreground.color_kind(),
+                self.style.background.color_kind(),
+                self.style.underline_color.color_kind(),
+            ],
+        );
 
         if use_colors {
             self.style.apply().fmt(fmt)?;

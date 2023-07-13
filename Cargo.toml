@@ -27,4 +27,6 @@ alloc = []
 
 strip-colors = []
 
-[dependencies]
+[dependencies.supports-color]
+version = '2'
+optional = true

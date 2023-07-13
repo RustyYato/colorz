@@ -1,4 +1,4 @@
-use colorize::{mode, Colorize, Stream::Stderr};
+use colorize::{mode, mode::Stream::Stderr, Colorize};
 
 fn main() {
     // NOTE: this example uses `stream(Stderr)` even though it's writing
@@ -16,14 +16,14 @@ fn main() {
     // if stdin/stderr/stdout have been redirected
 
     println!("color mode=always");
-    mode::set(mode::Mode::Always);
+    mode::set_coloring_mode(mode::Mode::Always);
     println!("{}", "blue".blue().stream(Stderr));
 
     println!("color mode=detect");
-    mode::set(mode::Mode::Detect);
+    mode::set_coloring_mode(mode::Mode::Detect);
     println!("{}", "blue".blue().stream(Stderr));
 
     println!("color mode=never");
-    mode::set(mode::Mode::Never);
+    mode::set_coloring_mode(mode::Mode::Never);
     println!("{}", "blue".blue().stream(Stderr));
 }

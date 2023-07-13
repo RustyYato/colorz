@@ -18,187 +18,258 @@
 #[cfg(doc)]
 use crate::{Stream, StyledValue};
 
-use core::sync::atomic::{AtomicU8, Ordering};
+use core::sync::atomic::AtomicU8;
 
-static MODE: AtomicU8 = AtomicU8::new(Mode::Detect as u8);
-
-const STREAM_NEVER: u8 = 0;
-const STREAM_ALWAYS: u8 = 1;
-const STREAM_UNDETECTED: u8 = 2;
-static STREAMS: [AtomicU8; 3] = [
-    AtomicU8::new(STREAM_UNDETECTED),
-    AtomicU8::new(STREAM_UNDETECTED),
-    AtomicU8::new(STREAM_UNDETECTED),
-];
+static COLORING_MODE: AtomicU8 = AtomicU8::new(Mode::DETECT);
+static DEFAULT_STREAM: AtomicU8 = AtomicU8::new(Stream::AlwaysColor.encode());
+static STDOUT_SUPPORT: AtomicU8 = AtomicU8::new(ColorSupport::DETECT);
+static STDERR_SUPPORT: AtomicU8 = AtomicU8::new(ColorSupport::DETECT);
 
 /// The coloring mode
-#[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Mode {
     /// use [`StyledValue::stream`] to pick when to color (by default always color if stream isn't specified)
     Detect,
-    /// Never color [`StyledValue`]
-    Never,
     /// Always color [`StyledValue`]
     Always,
+    /// Never color [`StyledValue`]
+    Never,
 }
 
-const DETECT: u8 = Mode::Detect as u8;
-const NEVER: u8 = Mode::Never as u8;
-const ALWAYS: u8 = Mode::Always as u8;
+/// The stream to detect when to color on
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Stream {
+    /// Detect via [`std::io::stdout`] if feature `std` or `supports-color` is enabled
+    Stdout,
+    /// Detect via [`std::io::stderr`] if feature `std` or `supports-color` is enabled
+    Stderr,
+    /// Always color, used to pick the coloring mode at runtime for a particular value
+    ///
+    /// The default coloring mode for streams
+    AlwaysColor,
+    /// Never color, used to pick the coloring mode at runtime for a particular value
+    NeverColor,
+}
 
-fn decode(mode: u8) -> Mode {
-    match mode {
-        self::DETECT => Mode::Detect,
-        self::NEVER => Mode::Never,
-        self::ALWAYS => Mode::Always,
-        _ => unreachable!(),
+/// The coloring kinds
+#[repr(u8)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ColorKind {
+    /// A basic ANSI color
+    Ansi,
+    /// A 256-color
+    Xterm,
+    /// A 48-bit color
+    Rgb,
+    /// No color at all
+    NoColor,
+}
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ColorSupport {
+    ansi: bool,
+    xterm: bool,
+    rgb: bool,
+}
+
+impl ColorSupport {
+    const DETECT: u8 = 0x80;
+
+    #[cfg(feature = "supports-color")]
+    fn encode(self) -> u8 {
+        u8::from(self.ansi) | u8::from(self.xterm) << 1 | u8::from(self.rgb) << 2
     }
-}
 
-#[cold]
-#[cfg(feature = "std")]
-fn detect_stream(stream: crate::Stream) -> bool {
-    use std::io::{stderr, stdin, stdout, IsTerminal};
-
-    let output = match stream {
-        crate::Stream::AlwaysColor => return true,
-        crate::Stream::NeverColor => return false,
-        crate::Stream::Stdout => stdout().is_terminal(),
-        crate::Stream::Stderr => stderr().is_terminal(),
-        crate::Stream::Stdin => stdin().is_terminal(),
-    };
-
-    STREAMS[stream as usize].store(output as u8, Ordering::Relaxed);
-
-    std::sync::atomic::fence(Ordering::SeqCst);
-    output
-}
-
-#[cfg(not(feature = "std"))]
-pub fn detect_stream(_stream: crate::Stream) -> bool {
-    true
-}
-
-#[inline(always)]
-#[cfg(feature = "strip-colors")]
-pub fn should_color(stream: crate::Stream) -> bool {
-    false
-}
-
-/// Should you color for a given stream
-#[inline]
-#[cfg(not(feature = "strip-colors"))]
-pub fn should_color(stream: crate::Stream) -> bool {
-    match get() {
-        Mode::Detect => {
-            match stream {
-                crate::Stream::AlwaysColor => return true,
-                crate::Stream::NeverColor => return false,
-                _ => (),
-            }
-
-            should_color_slow(stream)
+    #[cfg(feature = "supports-color")]
+    fn decode(x: u8) -> Self {
+        Self {
+            ansi: x & 0b001 != 0,
+            xterm: x & 0b010 != 0,
+            rgb: x & 0b100 != 0,
         }
-        Mode::Never => false,
-        Mode::Always => true,
     }
-}
-
-#[cold]
-#[cfg(not(feature = "strip-colors"))]
-fn should_color_slow(stream: crate::Stream) -> bool {
-    let stream_info = &STREAMS[stream as usize];
-    match stream_info.load(Ordering::Relaxed) {
-        self::STREAM_UNDETECTED => detect_stream(stream),
-        self::STREAM_NEVER => false,
-        self::STREAM_ALWAYS => true,
-        _ => unreachable!(),
-    }
-}
-
-/// Get the global coloring mode (default [`Mode::Detect`])
-pub fn get() -> Mode {
-    if cfg!(feature = "strip-colors") {
-        return Mode::Never;
-    }
-
-    decode(MODE.load(Ordering::Acquire))
-}
-
-/// Set the global coloring mode
-pub fn set(mode: Mode) {
-    if cfg!(feature = "strip-colors") {
-        return;
-    }
-
-    MODE.store(mode as u8, Ordering::Release);
 }
 
 impl Mode {
-    #[cfg(feature = "std")]
-    #[cfg_attr(doc, doc(cfg(feature = "std")))]
-    /// Get the coloring mode from the environment variables `NO_COLOR` and `ALWAYS_COLOR`
-    ///
-    /// if `NO_COLOR` is present, then pick [`Mode::Never`]
-    /// else if `ALWAYS_COLOR` is present, then pick [`Mode::Always`]
-    /// else pick [`Mode::Detect`]
-    pub fn from_env() -> Mode {
-        if cfg!(feature = "strip-colors") {
-            return Mode::Never;
-        }
+    const DETECT: u8 = Self::Detect.encode();
 
-        if std::env::var_os("NO_COLOR").is_some() {
-            Mode::Never
-        } else if std::env::var_os("ALWAYS_COLOR").is_some() {
-            Mode::Always
-        } else {
-            Mode::Detect
+    const fn encode(self) -> u8 {
+        match self {
+            Mode::Always => 0,
+            Mode::Never => 1,
+            Mode::Detect => 2,
+        }
+    }
+
+    const fn decode(x: u8) -> Self {
+        match x {
+            0 => Self::Always,
+            1 => Self::Never,
+            _ => Self::Detect,
         }
     }
 }
 
-/// Set the coloring mode from the environment variables `NO_COLOR` and `ALWAYS_COLOR`
-///
-/// if `NO_COLOR` is present, then set [`Mode::Never`]
-/// else if `ALWAYS_COLOR` is present, then set [`Mode::Always`]
-///
-/// If neither are set, the global coloring mode isn't changed
-#[cfg(feature = "std")]
-#[cfg_attr(doc, doc(cfg(feature = "std")))]
-pub fn set_from_env() {
-    if cfg!(feature = "strip-colors") {
-        return;
+impl Stream {
+    const fn encode(self) -> u8 {
+        match self {
+            Stream::Stdout => 0,
+            Stream::Stderr => 1,
+            Stream::AlwaysColor => 2,
+            Stream::NeverColor => 3,
+        }
     }
 
-    if std::env::var_os("NO_COLOR").is_some() {
-        set(Mode::Never);
-    } else if std::env::var_os("ALWAYS_COLOR").is_some() {
-        set(Mode::Always);
+    const fn decode(x: u8) -> Self {
+        match x {
+            0 => Self::Stdout,
+            1 => Self::Stderr,
+            2 => Self::AlwaysColor,
+            3 => Self::NeverColor,
+            _ => unreachable!(),
+        }
     }
 }
 
-/// Replace the global coloring mode
-pub fn replace(mode: Mode) -> Mode {
-    if cfg!(feature = "strip-colors") {
-        return Mode::Never;
-    }
-
-    decode(MODE.swap(mode as u8, Ordering::Release))
+/// Set the global coloring mode (this allows forcing colors on or off despite stream preferences)
+pub fn set_coloring_mode(mode: Mode) {
+    COLORING_MODE.store(Mode::encode(mode), core::sync::atomic::Ordering::Release)
 }
 
-/// Replace the global coloring mode if it is currently at `current`
-pub fn replace_if_current_is(current: Mode, mode: Mode) -> Result<(), Mode> {
-    if cfg!(feature = "strip-colors") {
-        return Err(Mode::Never);
-    }
+/// Get the global coloring mode
+pub fn get_coloring_mode() -> Mode {
+    Mode::decode(COLORING_MODE.load(core::sync::atomic::Ordering::Acquire))
+}
 
-    MODE.compare_exchange(
-        current as u8,
-        mode as u8,
-        Ordering::Release,
-        Ordering::Relaxed,
+/// Set the default stream if one isn't chosen per value
+pub fn set_default_stream(stream: Stream) {
+    DEFAULT_STREAM.store(
+        Stream::encode(stream),
+        core::sync::atomic::Ordering::Release,
     )
-    .map(drop)
-    .map_err(decode)
+}
+
+/// Get the default stream
+pub fn get_default_stream() -> Stream {
+    Stream::decode(DEFAULT_STREAM.load(core::sync::atomic::Ordering::Acquire))
+}
+
+pub(crate) fn should_color(stream: Option<Stream>, kinds: &[ColorKind]) -> bool {
+    match get_coloring_mode() {
+        Mode::Always => return true,
+        Mode::Never => return false,
+        Mode::Detect => (),
+    }
+
+    let stream = stream.unwrap_or_else(get_default_stream);
+
+    let is_stdout = match stream {
+        Stream::Stdout => true,
+        Stream::Stderr => false,
+        Stream::AlwaysColor => return true,
+        Stream::NeverColor => return false,
+    };
+
+    should_color_slow(is_stdout, kinds)
+}
+
+#[cold]
+#[cfg(all(not(feature = "std"), not(feature = "supports-color")))]
+fn should_color_slow(_is_stdout: bool, _kinds: &[ColorKind]) -> bool {
+    true
+}
+
+#[cold]
+#[cfg(all(feature = "std", not(feature = "supports-color")))]
+fn should_color_slow(is_stdout: bool, _kinds: &[ColorKind]) -> bool {
+    use core::sync::atomic::Ordering;
+    use std::io::IsTerminal;
+
+    let support_ref = match is_stdout {
+        true => &STDOUT_SUPPORT,
+        false => &STDERR_SUPPORT,
+    };
+
+    #[cold]
+    #[inline(never)]
+    fn detect(is_stdout: bool, support: &AtomicU8) -> bool {
+        let s = if is_stdout {
+            std::io::stdout().is_terminal()
+        } else {
+            std::io::stderr().is_terminal()
+        };
+
+        support.store(s as u8, Ordering::Relaxed);
+
+        core::sync::atomic::fence(Ordering::SeqCst);
+
+        s
+    }
+
+    match support_ref.load(Ordering::Acquire) {
+        ColorSupport::DETECT => detect(is_stdout, support_ref),
+        0 => false,
+        _ => true,
+    }
+}
+
+#[cold]
+#[cfg(feature = "supports-color")]
+fn should_color_slow(is_stdout: bool, kinds: &[ColorKind]) -> bool {
+    use core::sync::atomic::Ordering;
+
+    use supports_color::Stream;
+
+    let (stream, support_ref) = match is_stdout {
+        true => (Stream::Stdout, &STDOUT_SUPPORT),
+        false => (Stream::Stderr, &STDERR_SUPPORT),
+    };
+
+    let support = support_ref.load(Ordering::Acquire);
+
+    #[cold]
+    #[inline(never)]
+    fn detect(s: Stream, support: &AtomicU8) -> ColorSupport {
+        let s = supports_color::on(s).map_or(
+            ColorSupport {
+                ansi: false,
+                xterm: false,
+                rgb: false,
+            },
+            |level| ColorSupport {
+                ansi: level.has_basic,
+                xterm: level.has_256,
+                rgb: level.has_16m,
+            },
+        );
+
+        support.store(s.encode(), Ordering::Relaxed);
+
+        core::sync::atomic::fence(Ordering::SeqCst);
+
+        s
+    }
+
+    let support = if support == ColorSupport::DETECT {
+        detect(stream, support_ref)
+    } else {
+        ColorSupport::decode(support)
+    };
+
+    for &kind in kinds {
+        let supported = match kind {
+            ColorKind::Ansi => support.ansi,
+            ColorKind::Xterm => support.xterm,
+            ColorKind::Rgb => support.rgb,
+            ColorKind::NoColor => continue,
+        };
+
+        if !supported {
+            return false;
+        }
+    }
+
+    true
 }
