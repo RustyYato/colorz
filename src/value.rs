@@ -63,23 +63,23 @@ macro_rules! AnsiColorMethods {
             }
 
             /// Changes the foreground color
-            fn color<C>(&self, color: C) -> StyledValue<&Self, C> {
-                self.style().color(color)
+            fn fg<C>(&self, color: C) -> StyledValue<&Self, C> {
+                self.style().fg(color)
             }
 
             /// Changes the foreground color
-            fn into_color<C>(self, color: C) -> StyledValue<Self, C> where Self: Sized {
-                self.into_style().color(color)
+            fn into_fg<C>(self, color: C) -> StyledValue<Self, C> where Self: Sized {
+                self.into_style().fg(color)
             }
 
             /// Changes the background color
-            fn on_color<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, C> {
-                self.style().on_color(color)
+            fn on_bg<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, C> {
+                self.style().bg(color)
             }
 
             /// Changes the background color
-            fn into_on_color<C>(self, color: C) -> StyledValue<Self, crate::NoColor, C> where Self: Sized {
-                self.into_style().on_color(color)
+            fn into_bg<C>(self, color: C) -> StyledValue<Self, crate::NoColor, C> where Self: Sized {
+                self.into_style().bg(color)
             }
 
             /// Changes the underline color
@@ -140,7 +140,7 @@ macro_rules! AnsiColorMethods {
 
             /// Change the foreground color
             #[inline]
-            pub fn color<C>(self, color: C) -> StyledValue<T, C, B, U> {
+            pub fn fg<C>(self, color: C) -> StyledValue<T, C, B, U> {
                 StyledValue {
                     value: self.value,
                     style: self.style.fg(color),
@@ -150,7 +150,7 @@ macro_rules! AnsiColorMethods {
 
             /// Change the background color
             #[inline]
-            pub fn on_color<C>(self, color: C) -> StyledValue<T, F, C, U> {
+            pub fn bg<C>(self, color: C) -> StyledValue<T, F, C, U> {
                 StyledValue {
                     value: self.value,
                     style: self.style.bg(color),
@@ -169,11 +169,11 @@ macro_rules! AnsiColorMethods {
             }
 
             $(#[inline] #[$fg] pub fn $fun(self) -> StyledValue<T, ansi::$color, B, U> {
-                self.color(ansi::$color)
+                self.fg(ansi::$color)
             })*
 
             $(#[inline] #[$bg] pub fn $on_fun(self) -> StyledValue<T, F, ansi::$color, U> {
-                self.on_color(ansi::$color)
+                self.bg(ansi::$color)
             })*
 
             $(#[inline] #[$doc] pub fn $effect_fun(self) -> StyledValue<T, F, B, U> {

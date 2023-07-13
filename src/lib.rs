@@ -13,10 +13,13 @@ pub mod xterm;
 
 pub mod ansi;
 pub mod css;
+mod from_str;
 pub mod mode;
 pub mod rgb;
 mod style;
 mod value;
+
+pub use from_str::ParseColorError;
 
 /// A styled value, created from [`Colorize`] or [`StyledValue::new`]
 #[non_exhaustive]
