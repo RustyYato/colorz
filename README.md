@@ -87,6 +87,8 @@ down the list, and the first element that applies will be selected.
 The global stream is always set to one of the possible `Stream` values,
 so one option on the list will always be chosen.
 
+NOTE that setting the coloring mode from the environment sets the global coloring mode, so either the second or third option on the list.
+
 ## Examples
 
 Format any value
