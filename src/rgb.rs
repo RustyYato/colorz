@@ -16,34 +16,94 @@ pub struct RgbColor {
     pub blue: u8,
 }
 
-fn fmt_u8(mut x: u8, buf: &mut [u8; 4], semi: bool) -> &str {
-    #[cold]
-    #[inline(never)]
-    fn unreachable() -> ! {
-        unreachable!("from_u8 will always produce valid utf-8 strings")
+struct RgbBuffer {
+    data: [u8; 19],
+    len: u8,
+}
+
+#[repr(u8)]
+enum Layer {
+    Foreground,
+    Background,
+    Underline,
+}
+
+impl RgbBuffer {
+    fn new() -> Self {
+        RgbBuffer {
+            // we chose `;` so we don't need to write the seperator each time
+            // which saves a little bit of time
+            data: [b';'; 19],
+            len: 0,
+        }
     }
 
-    let mut i = 2;
+    fn write_escape_start(&mut self, layer: Layer) {
+        self.write(match layer {
+            Layer::Foreground => "\x1b[38;2;",
+            Layer::Background => "\x1b[48;2;",
+            Layer::Underline => "\x1b[58;2;",
+        })
+    }
 
-    let j = match x {
-        0..=9 => 2,
-        10..=99 => 1,
-        100..=255 => 0,
-    };
+    fn write_args_header(&mut self, layer: Layer) {
+        self.write(match layer {
+            Layer::Foreground => "38;2;",
+            Layer::Background => "48;2;",
+            Layer::Underline => "58;2;",
+        })
+    }
 
-    buf[i] = (x % 10) + b'0';
-    i -= 1;
-    x /= 10;
+    fn write_sep(&mut self) {
+        self.len += 1;
+    }
 
-    buf[i] = (x % 10) + b'0';
-    i -= 1;
-    x /= 10;
+    fn write_escape_end(&mut self) {
+        self.write_char(b'm')
+    }
 
-    buf[i] = (x % 10) + b'0';
+    fn write(&mut self, s: &str) {
+        self.data[self.len as usize..][..s.len()].copy_from_slice(s.as_bytes());
+        self.len += s.len() as u8;
+    }
 
-    let buf = &buf[j..3 + usize::from(semi)];
+    fn write_char(&mut self, x: u8) {
+        self.data[self.len as usize] = x;
+        self.len += 1;
+    }
 
-    core::str::from_utf8(buf).unwrap_or_else(|_| unreachable())
+    fn write_u8(&mut self, mut x: u8) {
+        let mut len = 0;
+        let data = &mut self.data[self.len as usize..][..3];
+
+        if x >= 100 {
+            data[len] = x / 100 + b'0';
+            x %= 100;
+            len += 1;
+        }
+
+        if x >= 10 {
+            data[len] = x / 10 + b'0';
+            x %= 10;
+            len += 1;
+        }
+
+        data[len] = x + b'0';
+        self.len += len as u8 + 1;
+    }
+
+    fn to_str(&self) -> &str {
+        core::str::from_utf8(&self.data[..self.len as usize]).unwrap()
+    }
+
+    #[inline(always)]
+    fn write_args(&mut self, red: u8, green: u8, blue: u8) {
+        self.write_u8(red);
+        self.write_sep();
+        self.write_u8(green);
+        self.write_sep();
+        self.write_u8(blue);
+    }
 }
 
 impl crate::seal::Seal for RgbColor {}
@@ -53,66 +113,48 @@ impl WriteColor for RgbColor {
     }
 
     fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let buf = &mut [0; 4];
-        buf[3] = b';';
-        f.write_str("38;2;")?;
-        f.write_str(fmt_u8(self.red, buf, true))?;
-        f.write_str(fmt_u8(self.green, buf, true))?;
-        f.write_str(fmt_u8(self.blue, buf, false))?;
-        Ok(())
+        let mut buffer = RgbBuffer::new();
+        buffer.write_args_header(Layer::Foreground);
+        buffer.write_args(self.red, self.green, self.blue);
+        f.write_str(buffer.to_str())
     }
 
     fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let buf = &mut [0; 4];
-        buf[3] = b';';
-        f.write_str("48;2;")?;
-        f.write_str(fmt_u8(self.red, buf, true))?;
-        f.write_str(fmt_u8(self.green, buf, true))?;
-        f.write_str(fmt_u8(self.blue, buf, false))?;
-        Ok(())
+        let mut buffer = RgbBuffer::new();
+        buffer.write_args_header(Layer::Background);
+        buffer.write_args(self.red, self.green, self.blue);
+        f.write_str(buffer.to_str())
     }
 
     fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let buf = &mut [0; 4];
-        buf[3] = b';';
-        f.write_str("58;2;")?;
-        f.write_str(fmt_u8(self.red, buf, true))?;
-        f.write_str(fmt_u8(self.green, buf, true))?;
-        f.write_str(fmt_u8(self.blue, buf, false))?;
-        Ok(())
+        let mut buffer = RgbBuffer::new();
+        buffer.write_args_header(Layer::Underline);
+        buffer.write_args(self.red, self.green, self.blue);
+        f.write_str(buffer.to_str())
     }
 
     fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let buf = &mut [0; 4];
-        buf[3] = b';';
-        f.write_str("\x1b[38;2;")?;
-        f.write_str(fmt_u8(self.red, buf, true))?;
-        f.write_str(fmt_u8(self.green, buf, true))?;
-        buf[3] = b'm';
-        f.write_str(fmt_u8(self.blue, buf, true))?;
-        Ok(())
+        let mut buffer = RgbBuffer::new();
+        buffer.write_escape_start(Layer::Foreground);
+        buffer.write_args(self.red, self.green, self.blue);
+        buffer.write_escape_end();
+        f.write_str(buffer.to_str())
     }
 
     fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let buf = &mut [0; 4];
-        buf[3] = b';';
-        f.write_str("\x1b[48;2;")?;
-        f.write_str(fmt_u8(self.red, buf, true))?;
-        f.write_str(fmt_u8(self.green, buf, true))?;
-        buf[3] = b'm';
-        f.write_str(fmt_u8(self.blue, buf, true))?;
-        Ok(())
+        let mut buffer = RgbBuffer::new();
+        buffer.write_escape_start(Layer::Background);
+        buffer.write_args(self.red, self.green, self.blue);
+        buffer.write_escape_end();
+        f.write_str(buffer.to_str())
     }
 
     fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let buf = &mut [0; 4];
-        buf[3] = b';';
-        f.write_str("\x1b[58;2;")?;
-        f.write_str(fmt_u8(self.red, buf, true))?;
-        f.write_str(fmt_u8(self.green, buf, true))?;
-        buf[3] = b'm';
-        f.write_str(fmt_u8(self.blue, buf, true))?;
-        Ok(())
+        let mut buffer = RgbBuffer::new();
+        buffer.write_escape_start(Layer::Underline);
+        buffer.write_args(self.red, self.green, self.blue);
+        buffer.write_escape_end();
+        f.write_str(buffer.to_str())
     }
 }
 
