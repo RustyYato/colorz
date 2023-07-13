@@ -245,11 +245,6 @@ impl EffectFlags {
     pub const fn iter(self) -> EffectFlagsIter {
         EffectFlagsIter { data: self.data }
     }
-
-    #[inline(always)]
-    fn try_for_each<F: FnMut(Effect) -> Result<(), E>, E>(self, f: F) -> Result<(), E> {
-        self.iter().try_for_each(f)
-    }
 }
 
 impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
@@ -632,9 +627,11 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             };
         }
 
-        if !self.is_plain() {
-            f.write_str("\x1b[")?
+        if self.is_plain() {
+            return Ok(());
         }
+
+        f.write_str("\x1b[")?;
 
         if let Some(fg) = self.foreground.get() {
             semicolon = true;
@@ -647,8 +644,8 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             bg.fmt_background_args(f)?;
         }
 
-        if !self.effects.data.is_power_of_two() {
-            self.effects.try_for_each(|effect| {
+        if !self.effects.at_most_one_effect() {
+            self.effects.iter().try_for_each(|effect| {
                 semi!();
                 semicolon = true;
                 f.write_str(effect.apply_args())?;
@@ -656,9 +653,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             })?;
         }
 
-        if !self.is_plain() {
-            f.write_str("m")?
-        }
+        f.write_str("m")?;
 
         Ok(())
     }
@@ -706,7 +701,8 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 
     #[cold]
     fn fmt_clear_slow(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if self.effects.at_most_one_effect() {
+        let at_most_one_effect = self.effects.at_most_one_effect();
+        if at_most_one_effect {
             if let Some(effect) = self.effects.iter().next() {
                 f.write_str(effect.clear_escape())?;
             }
@@ -731,9 +727,11 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             };
         }
 
-        if !self.is_plain() {
-            f.write_str("\x1b[")?
+        if self.is_plain() {
+            return Ok(());
         }
+
+        f.write_str("\x1b[")?;
 
         if self.foreground.get().is_some() {
             semicolon = true;
@@ -746,8 +744,8 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             ansi::Default.fmt_background_args(f)?;
         }
 
-        if !self.effects.data.is_power_of_two() {
-            self.effects.try_for_each(|effect| {
+        if !at_most_one_effect {
+            self.effects.iter().try_for_each(|effect| {
                 semi!();
                 semicolon = true;
                 f.write_str(effect.clear_args())?;
@@ -755,9 +753,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             })?;
         }
 
-        if !self.is_plain() {
-            f.write_str("m")?
-        }
+        f.write_str("m")?;
 
         Ok(())
     }
