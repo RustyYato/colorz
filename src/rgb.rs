@@ -55,6 +55,7 @@ impl RgbBuffer {
     }
 
     fn write_sep(&mut self) {
+        // seperators we set when we initialized, so we don't need to write anything
         self.len += 1;
     }
 
@@ -73,6 +74,10 @@ impl RgbBuffer {
     }
 
     fn write_u8(&mut self, mut x: u8) {
+        // makes LLVM's peekhole optimizer trigger, giving better codegen
+        // this also lifts the bounds check to the top, and no other
+        // bounds checks are done
+
         let mut len = 0;
         let data = &mut self.data[self.len as usize..][..3];
 
@@ -96,6 +101,7 @@ impl RgbBuffer {
         core::str::from_utf8(&self.data[..self.len as usize]).unwrap()
     }
 
+    // inline(always) gives a measurable perf boost
     #[inline(always)]
     fn write_args(&mut self, red: u8, green: u8, blue: u8) {
         self.write_u8(red);
