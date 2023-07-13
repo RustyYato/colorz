@@ -16,6 +16,36 @@ pub struct RgbColor {
     pub blue: u8,
 }
 
+fn fmt_u8(mut x: u8, buf: &mut [u8; 4], semi: bool) -> &str {
+    #[cold]
+    #[inline(never)]
+    fn unreachable() -> ! {
+        unreachable!("from_u8 will always produce valid utf-8 strings")
+    }
+
+    let mut i = 2;
+
+    let j = match x {
+        0..=9 => 2,
+        10..=99 => 1,
+        100..=255 => 0,
+    };
+
+    buf[i] = (x % 10) + b'0';
+    i -= 1;
+    x /= 10;
+
+    buf[i] = (x % 10) + b'0';
+    i -= 1;
+    x /= 10;
+
+    buf[i] = (x % 10) + b'0';
+
+    let buf = &buf[j..3 + usize::from(semi)];
+
+    core::str::from_utf8(buf).unwrap_or_else(|_| unreachable())
+}
+
 impl crate::seal::Seal for RgbColor {}
 impl WriteColor for RgbColor {
     fn color_kind(self) -> crate::mode::ColorKind {
@@ -23,15 +53,66 @@ impl WriteColor for RgbColor {
     }
 
     fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "38;2;{};{};{}", self.red, self.green, self.blue)
+        let buf = &mut [0; 4];
+        buf[3] = b';';
+        f.write_str("38;2;")?;
+        f.write_str(fmt_u8(self.red, buf, true))?;
+        f.write_str(fmt_u8(self.green, buf, true))?;
+        f.write_str(fmt_u8(self.blue, buf, false))?;
+        Ok(())
     }
 
     fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "48;2;{};{};{}", self.red, self.green, self.blue)
+        let buf = &mut [0; 4];
+        buf[3] = b';';
+        f.write_str("48;2;")?;
+        f.write_str(fmt_u8(self.red, buf, true))?;
+        f.write_str(fmt_u8(self.green, buf, true))?;
+        f.write_str(fmt_u8(self.blue, buf, false))?;
+        Ok(())
     }
 
     fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "58;2;{};{};{}", self.red, self.green, self.blue)
+        let buf = &mut [0; 4];
+        buf[3] = b';';
+        f.write_str("58;2;")?;
+        f.write_str(fmt_u8(self.red, buf, true))?;
+        f.write_str(fmt_u8(self.green, buf, true))?;
+        f.write_str(fmt_u8(self.blue, buf, false))?;
+        Ok(())
+    }
+
+    fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let buf = &mut [0; 4];
+        buf[3] = b';';
+        f.write_str("\x1b[38;2;")?;
+        f.write_str(fmt_u8(self.red, buf, true))?;
+        f.write_str(fmt_u8(self.green, buf, true))?;
+        buf[3] = b'm';
+        f.write_str(fmt_u8(self.blue, buf, true))?;
+        Ok(())
+    }
+
+    fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let buf = &mut [0; 4];
+        buf[3] = b';';
+        f.write_str("\x1b[48;2;")?;
+        f.write_str(fmt_u8(self.red, buf, true))?;
+        f.write_str(fmt_u8(self.green, buf, true))?;
+        buf[3] = b'm';
+        f.write_str(fmt_u8(self.blue, buf, true))?;
+        Ok(())
+    }
+
+    fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let buf = &mut [0; 4];
+        buf[3] = b';';
+        f.write_str("\x1b[58;2;")?;
+        f.write_str(fmt_u8(self.red, buf, true))?;
+        f.write_str(fmt_u8(self.green, buf, true))?;
+        buf[3] = b'm';
+        f.write_str(fmt_u8(self.blue, buf, true))?;
+        Ok(())
     }
 }
 
