@@ -2,7 +2,7 @@
 //!
 //! There are three levels, in order of precedence
 //! * feature flags - compile time (`strip-colors`)
-//! * global - runtime [`set`], [`set_from_env`], [`replace`], [`replace_if_current_is`]
+//! * global - runtime [`set_coloring_mode`], [`set_coloring_mode_from_env`]
 //! * per value - runtime [`StyledValue::stream`]
 //!
 //! higher precedence options forces coloring or no-coloring even if lower precedence options
@@ -110,6 +110,35 @@ impl Mode {
             _ => Self::Detect,
         }
     }
+
+    /// Reads the current mode from the environment
+    ///
+    /// * If `NO_COLOR` is set to a non-zero value, [`Mode::Never`] is returned
+    ///
+    /// * If `ALWAYS_COLOR`, `CLICOLOR_FORCE`, `FORCE_COLOR` is set to a non-zero value, [`Mode::Always`] is returned
+    ///
+    /// * otherwise None is returned
+    #[cfg(feature = "std")]
+    #[cfg_attr(doc, doc(cfg(feature = "std")))]
+    pub fn from_env() -> Option<Self> {
+        if std::env::var_os("NO_COLOR").is_some_and(|x| x != "0") {
+            return Some(Self::Never);
+        }
+
+        if std::env::var_os("ALWAYS_COLOR").is_some_and(|x| x != "0") {
+            return Some(Self::Always);
+        }
+
+        if std::env::var_os("CLICOLOR_FORCE").is_some_and(|x| x != "0") {
+            return Some(Self::Always);
+        }
+
+        if std::env::var_os("FORCE_COLOR").is_some_and(|x| x != "0") {
+            return Some(Self::Always);
+        }
+
+        None
+    }
 }
 
 impl Stream {
@@ -140,6 +169,23 @@ pub fn set_coloring_mode(mode: Mode) {
     }
 
     COLORING_MODE.store(Mode::encode(mode), core::sync::atomic::Ordering::Release)
+}
+
+/// Reads the current mode from the environment
+///
+/// if no relevant environment variables are set, then the coloring mode is left unchanged
+///
+/// see [`Mode::from_env`] for details on which env vars are supported
+#[cfg(feature = "std")]
+#[cfg_attr(doc, doc(cfg(feature = "std")))]
+pub fn set_coloring_mode_from_env() {
+    if cfg!(feature = "strip-colors") {
+        return;
+    }
+
+    if let Some(mode) = Mode::from_env() {
+        set_coloring_mode(mode)
+    }
 }
 
 /// Get the global coloring mode
