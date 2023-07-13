@@ -32,7 +32,41 @@ Features:
 * compile-time selection of xterm colors by color code
 * compile-time style construction
 * compile-time style value construction
-* `NO_COLOR`/`ALWAYS_COLOR` environment variables: `colorize::mode::{Mode::from_env, set_from_env}` (requires `std` feature)
+* `NO_COLOR`/`ALWAYS_COLOR` environment variables: `colorize::mode::{Mode::from_env, set_coloring_mode_from_env}`
+    * requires `std` or `supports-color` feature
+
+## Feature Flags
+
+This crate has a few feature flags
+* `strip-colors` - removes all coloring for `StyledValue`'s formatting methods
+* `std` - this enables the standard library (since this library is `no_std` by default)
+* `supports-color` - this enables the `supports-color` crate (which also uses the `std` library)
+
+None of the feature is enabled by default. And they should only be turned on by the final binary crate.
+
+If these features are turned off, then only the global mode settings is respected, and no stream-based
+color detection is done.
+
+if `strip-colors` is enabled, then `colorize::mode::get_coloring_mode` will always
+return `Mode::Never`, and `StyledValue` will never be colored.
+
+else if `supports-color` is enabled, then the `supports-color` crate is used to detect if
+ANSI, Xterm or RGB colors are supports. If a `StyledValue` tries to use any unsupported
+color types, then it will not do any coloring. 
+For example, if you terminal doesn't support Xterm colors, and you write
+
+```rust
+use colorize::{Colorize, xterm};
+
+println!("{}", "hello world".fg(xterm::Red));
+```
+
+Then you will see `hello world` in your default terminal color.
+
+finally if `std` is enabled, then if the stream is a terminal then all coloring types will be used.
+    and if the stream isn't a terminal then no coloring will be chosen.
+
+## Examples
 
 Format any value
 ```rust
