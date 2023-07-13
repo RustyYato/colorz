@@ -249,7 +249,6 @@ MkAnsiColor! {
     5 Magenta 35 45
     6 Cyan    36 46
     7 White   37 47
-    0 Default   39 49
 
     8 BrightBlack   90 100
     9 BrightRed     91 101
@@ -259,4 +258,6 @@ MkAnsiColor! {
     13 BrightMagenta 95 105
     14 BrightCyan    96 106
     15 BrightWhite   97 107
+
+    16 Default   39 49
 }
