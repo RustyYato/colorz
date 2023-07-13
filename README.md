@@ -87,7 +87,13 @@ down the list, and the first element that applies will be selected.
 The global stream is always set to one of the possible `Stream` values,
 so one option on the list will always be chosen.
 
-NOTE that setting the coloring mode from the environment sets the global coloring mode, so either the second or third option on the list.
+NOTE that setting the coloring mode from the environment sets the global coloring mode,
+so either the second or third option on the list.
+
+NOTE that the coloring mode only affects `StyledValue` (which includes all outputs of the `Colorize` trait).
+Using `Style::apply`/`Style::clear` directly will not respect the coloring mode, and can be used to force
+coloring regardless of the current coloring mode. You can use `Style::should_color` to detect if a given style
+should be used based on the current coloring mode.
 
 ## Examples
 

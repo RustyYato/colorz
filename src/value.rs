@@ -296,14 +296,7 @@ impl<T, F: OptionalColor, B: OptionalColor, U: OptionalColor> StyledValue<T, F, 
         fmt: &mut fmt::Formatter<'_>,
         f: impl FnOnce(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
     ) -> fmt::Result {
-        let use_colors = crate::mode::should_color(
-            self.stream,
-            &[
-                self.style.foreground.color_kind(),
-                self.style.background.color_kind(),
-                self.style.underline_color.color_kind(),
-            ],
-        );
+        let use_colors = self.style.should_color(self.stream);
 
         if use_colors {
             self.style.apply().fmt(fmt)?;

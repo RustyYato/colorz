@@ -1,6 +1,6 @@
 use core::{fmt, num::NonZeroU16};
 
-use crate::{ansi, Color, ComptimeColor, OptionalColor, WriteColor};
+use crate::{ansi, mode::Stream, Color, ComptimeColor, OptionalColor, WriteColor};
 
 /// A generic style format, this specifies the colors of the foreground, background, underline,
 /// and what effects the text should have (bold, italics, etc.)
@@ -540,6 +540,20 @@ const ANY_UNDERLINE: EffectFlags = EffectFlags::new()
     .with(Effect::DoubleUnderline);
 
 impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
+    /// Should you color based on the current coloring mode
+    ///
+    /// See `Coloring Mode` in the crate docs for details
+    pub fn should_color(&self, stream: Option<Stream>) -> bool {
+        crate::mode::should_color(
+            stream,
+            &[
+                self.foreground.color_kind(),
+                self.background.color_kind(),
+                self.underline_color.color_kind(),
+            ],
+        )
+    }
+
     fn fmt_apply(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.effects.is_any(ANY_UNDERLINE) {
             if let Some(color) = self.underline_color.get() {
