@@ -20,8 +20,6 @@ rustc-args = ["--cfg", "doc"]
 
 [features]
 
-default = ['std']
-
 std = ['alloc']
 alloc = []
 
