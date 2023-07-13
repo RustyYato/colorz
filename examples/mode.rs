@@ -1,4 +1,8 @@
-use colorize::{mode, mode::Stream::Stderr, Colorize};
+use colorize::{
+    mode,
+    mode::Stream::{AlwaysColor, Stderr},
+    Colorize,
+};
 
 fn main() {
     // NOTE: this example uses `stream(Stderr)` even though it's writing
@@ -15,15 +19,21 @@ fn main() {
     // NOTE: that colorize currently uses `std::io::IsTerminal` to detect
     // if stdin/stderr/stdout have been redirected
 
+    assert_eq!(mode::get_default_stream(), AlwaysColor);
+
+    mode::set_default_stream(Stderr);
+
+    assert_eq!(mode::get_default_stream(), Stderr);
+
     println!("color mode=always");
     mode::set_coloring_mode(mode::Mode::Always);
-    println!("{}", "blue".blue().stream(Stderr));
+    println!("{}", "blue".blue());
 
     println!("color mode=detect");
     mode::set_coloring_mode(mode::Mode::Detect);
-    println!("{}", "blue".blue().stream(Stderr));
+    println!("{}", "blue".blue());
 
     println!("color mode=never");
     mode::set_coloring_mode(mode::Mode::Never);
-    println!("{}", "blue".blue().stream(Stderr));
+    println!("{}", "blue".blue());
 }
