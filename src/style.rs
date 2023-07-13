@@ -180,6 +180,12 @@ impl EffectFlags {
         self.data == 0
     }
 
+    #[inline(always)]
+    const fn at_most_one_effect(self) -> bool {
+        // self.data == 0 || self.data.is_power_of_two()
+        self.data & self.data.wrapping_sub(1) == 0
+    }
+
     /// Is this effect in the collection
     #[inline(always)]
     pub const fn is(self, opt: Effect) -> bool {
@@ -577,20 +583,18 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
                 // for now
             }
             (crate::Kind::AlwaysSome, crate::Kind::NeverSome) => {
-                if self.effects.data.count_ones() <= 1 {
-                    if self.effects.data.is_power_of_two() {
+                if self.effects.at_most_one_effect() {
+                    if !self.effects.is_plain() {
                         let effect = self.effects.iter().next().unwrap();
                         f.write_str(effect.apply_escape())?;
                     }
 
-                    if let Some(fg) = self.foreground.get() {
-                        return fg.fmt_foreground(f);
-                    }
+                    return self.foreground.get().unwrap().fmt_foreground(f);
                 }
             }
             (crate::Kind::NeverSome, crate::Kind::AlwaysSome) => {
-                if self.effects.data.count_ones() <= 1 {
-                    if self.effects.data.is_power_of_two() {
+                if self.effects.at_most_one_effect() {
+                    if !self.effects.is_plain() {
                         let effect = self.effects.iter().next().unwrap();
                         f.write_str(effect.apply_escape())?;
                     }
@@ -602,6 +606,10 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             }
         }
 
+        self.fmt_apply_slow(f)
+    }
+
+    fn fmt_apply_slow(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if self.effects.data.is_power_of_two() {
             let effect = self.effects.iter().next().unwrap();
             f.write_str(effect.apply_escape())?;
@@ -674,8 +682,8 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
                 // for now
             }
             (crate::Kind::AlwaysSome, crate::Kind::NeverSome) => {
-                if self.effects.data.count_ones() <= 1 {
-                    if self.effects.data.is_power_of_two() {
+                if self.effects.at_most_one_effect() {
+                    if !self.effects.is_plain() {
                         let effect = self.effects.iter().next().unwrap();
                         f.write_str(effect.clear_escape())?;
                     }
@@ -684,8 +692,8 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
                 }
             }
             (crate::Kind::NeverSome, crate::Kind::AlwaysSome) => {
-                if self.effects.data.count_ones() <= 1 {
-                    if self.effects.data.is_power_of_two() {
+                if self.effects.at_most_one_effect() {
+                    if !self.effects.is_plain() {
                         let effect = self.effects.iter().next().unwrap();
                         f.write_str(effect.clear_escape())?;
                     }
@@ -695,6 +703,11 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
             }
         }
 
+        self.fmt_clear_slow(f)
+    }
+
+    #[cold]
+    fn fmt_clear_slow(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if self.effects.data.is_power_of_two() {
             let effect = self.effects.iter().next().unwrap();
             f.write_str(effect.clear_escape())?;

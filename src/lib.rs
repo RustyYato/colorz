@@ -23,6 +23,7 @@ pub use from_str::ParseColorError;
 
 /// A styled value, created from [`Colorize`] or [`StyledValue::new`]
 #[non_exhaustive]
+#[derive(Clone, Copy)]
 pub struct StyledValue<T, F = NoColor, B = NoColor, U = NoColor> {
     /// The value to style
     pub value: T,
