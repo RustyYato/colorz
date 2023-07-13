@@ -81,10 +81,7 @@ macro_rules! Effect {
             $(pub const $name: &str = concat!("\x1b[", stringify!($clear), "m");)*
         }
 
-        const _: () = {
-            let effects = EffectFlags::all();
-            $(assert!(effects.is(Effect::$name));)*
-        };
+        const ALL_EFFECTS: EffectFlags = EffectFlags::new() $(.with(Effect::$name))*;
 
         impl Effect {
             fn decode(x: u8) -> Self {
@@ -157,7 +154,7 @@ impl EffectFlags {
     /// Create a set of all effects
     #[inline(always)]
     pub const fn all() -> Self {
-        Self { data: 0x1fff }
+        ALL_EFFECTS
     }
 
     /// Create a set of effects from an array
