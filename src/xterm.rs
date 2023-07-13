@@ -113,52 +113,64 @@ macro_rules! XTerm {
                 }
             }
 
-            /// The foreground color args of this Xterm color
+            /// The ANSI foreground color arguments
             #[inline]
             pub const fn foreground_args(self) -> &'static str {
-                match self {
-                    $(Self::$name => $name::FOREGROUND_ARGS,)*
-                }
+                const FOREGROUND_ARGS: &[&'static str; 256] = &[
+                    $($name::FOREGROUND_ARGS,)*
+                ];
+
+                FOREGROUND_ARGS[self as usize]
             }
 
-            /// The background color args of this Xterm color
+            /// The ANSI background color arguments
             #[inline]
             pub const fn background_args(self) -> &'static str {
-                match self {
-                    $(Self::$name => $name::BACKGROUND_ARGS,)*
-                }
+                const BACKGROUND_ARGS: &[&'static str; 256] = &[
+                    $($name::BACKGROUND_ARGS,)*
+                ];
+
+                BACKGROUND_ARGS[self as usize]
             }
 
-            /// The underline color args of this Xterm color
+            /// The ANSI underline color arguments
             #[inline]
             pub const fn underline_args(self) -> &'static str {
-                match self {
-                    $(Self::$name => $name::UNDERLINE_ARGS,)*
-                }
+                const UNDERLINE_ARGS: &[&'static str; 256] = &[
+                    $($name::UNDERLINE_ARGS,)*
+                ];
+
+                UNDERLINE_ARGS[self as usize]
             }
 
             /// The foreground color sequence of this Xterm color
             #[inline]
             pub const fn foreground_escape(self) -> &'static str {
-                match self {
-                    $(Self::$name => $name::FOREGROUND_ESCAPE,)*
-                }
+                const FOREGROUND_ESCAPE: &[&'static str; 256] = &[
+                    $($name::FOREGROUND_ESCAPE,)*
+                ];
+
+                FOREGROUND_ESCAPE[self as usize]
             }
 
             /// The background color sequence of this Xterm color
             #[inline]
             pub const fn background_escape(self) -> &'static str {
-                match self {
-                    $(Self::$name => $name::BACKGROUND_ESCAPE,)*
-                }
+                const BACKGROUND_ESCAPE: &[&'static str; 256] = &[
+                    $($name::BACKGROUND_ESCAPE,)*
+                ];
+
+                BACKGROUND_ESCAPE[self as usize]
             }
 
             /// The underline color sequence of this Xterm color
             #[inline]
             pub const fn underline_escape(self) -> &'static str {
-                match self {
-                    $(Self::$name => $name::UNDERLINE_ESCAPE,)*
-                }
+                const UNDERLINE_ESCAPE: &[&'static str; 256] = &[
+                    $($name::UNDERLINE_ESCAPE,)*
+                ];
+
+                UNDERLINE_ESCAPE[self as usize]
             }
         }
 
