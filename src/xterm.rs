@@ -288,29 +288,29 @@ macro_rules! XTerm {
 XTerm! {
     $
     0 Black
-    1 Red4
-    2 ForestGreen
-    3 Olive
-    4 Navy
-    5 Magenta4
-    6 Teal
-    7 Silver
-    8 Gray50
-    9 Red
-    10 Green
-    11 Yellow
-    12 Blue
-    13 Magenta
-    14 Aqua
-    15 White
+    1 Red
+    2 Green
+    3 Yellow
+    4 Blue
+    5 Magenta
+    6 Cyan
+    7 White
+    8 BrightBlack
+    9 BrightRed
+    10 BrightGreen
+    11 BrightYellow
+    12 BrightBlue
+    13 BrightMagenta
+    14 BrightCyan
+    15 BrightWhite
     16 Gray0
-    17 NavyBlue
+    17 Navy
     18 DarkBlue
     19 Blue3
     20 MediumBlue
     21 Blue1
     22 DarkGreen
-    23 DarkSlateGray
+    23 Teal
     24 DeepSkyBlue4
     25 DodgerBlue4
     26 DodgerBlue3
@@ -321,7 +321,7 @@ XTerm! {
     31 DarkCyan
     32 DeepSkyBlue3
     33 DodgerBlue
-    34 Green2
+    34 ForestGreen
     35 SeaGreen
     36 Cyan4
     37 LightSeaGreen
@@ -338,14 +338,14 @@ XTerm! {
     48 SpringGreen
     49 MediumSpringGreen
     50 Cyan2
-    51 Cyan1
+    51 Aqua
     52 Firebrick4
     53 DarkOrchid4
     54 Indigo
     55 Purple4
     56 Purple3
     57 BlueViolet
-    58 Gold4
+    58 Olive
     59 Gray37
     60 MediumPurple4
     61 SlateBlue
@@ -378,7 +378,7 @@ XTerm! {
     88 DarkRed
     89 DeepPink4
     90 DarkMagenta
-    91 DarkOrchid
+    91 Magenta4
     92 DarkViolet
     93 Purple2
     94 Orange4
@@ -411,7 +411,7 @@ XTerm! {
     121 PaleGreen1
     122 Aquamarine
     123 DarkSlateGray1
-    124 Firebrick
+    124 Red4
     125 Maroon4
     126 MediumVioletRed
     127 Maroon3
@@ -531,7 +531,7 @@ XTerm! {
     241 Gray38
     242 Gray42
     243 Gray46
-    244 Grey50
+    244 Gray50
     245 Gray54
     246 Gray58
     247 Gray62

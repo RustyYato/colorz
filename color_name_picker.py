@@ -28,6 +28,18 @@ for rgb, _, name in color_names:
     if name in all_colors_names:
         continue
 
+    if name.lower() in [
+     "black"    ,
+     "red"      ,
+     "green"    ,
+     "yellow"   ,
+     "blue"     ,
+     "magenta"  ,
+     "cyan"     ,
+     "white"    ,
+    ]:
+        continue
+
     has_num = any(
         x.isdigit()
         for x in name
@@ -47,6 +59,8 @@ all_colors.sort(key=lambda a: a[2])
 print(all_colors)
 
 new_colors_names = []
+
+del colors[:16]
 
 while True:
     best_dist = float("inf")
