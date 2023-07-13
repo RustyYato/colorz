@@ -54,9 +54,14 @@ fn test_rgb() {
 
 #[test]
 fn test_rgb_const() {
-    let style = Style::new().bg(colorize::rgb::Rgb::<255, 128, 0>);
+    let style = Style::new().bg(colorize::rgb::Rgb::<255, 0, 18>);
 
-    assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;000m");
+    assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;0;18m");
+
+    assert_eq!(
+        colorize::rgb::Rgb::<255, 0, 18>::FOREGROUND_ARGS,
+        "38;2;255;0;18"
+    );
 }
 
 #[test]

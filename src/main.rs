@@ -10,7 +10,15 @@ fn main() {
         let _ = write!(
             buffer,
             "{}",
-            format_args!("Hello {} world", "my red".fg(colorize::ansi::Red)).on_blue()
+            format_args!(
+                "Hello {} world",
+                "my red".fg(colorize::rgb::RgbColor {
+                    red: 0xff,
+                    green: 0xff,
+                    blue: 0x10,
+                })
+            )
+            .on_blue()
         );
     }
     dbg!(start.elapsed());

@@ -164,8 +164,67 @@ impl WriteColor for RgbColor {
     }
 }
 
-const fn raw_args(r: u8, g: u8, b: u8) -> [u8; 13] {
-    let mut output = *b"2;rrr;ggg;bbb";
+struct Payload {
+    len: usize,
+    data: [u8; 19],
+}
+
+impl Payload {
+    const fn raw_args_payload(&self) -> Payload {
+        let mut data = [0; 19];
+        let mut i = 0;
+        while i < self.len - 1 - 5 {
+            data[i] = self.data[i + 5];
+            i += 1;
+        }
+        Payload {
+            len: self.len - 1 - 5,
+            data,
+        }
+    }
+
+    const fn args_payload(&self) -> Payload {
+        let mut data = [0; 19];
+        let mut i = 0;
+        while i < self.len - 1 - 2 {
+            data[i] = self.data[i + 2];
+            i += 1;
+        }
+        Payload {
+            len: self.len - 1 - 2,
+            data,
+        }
+    }
+
+    const fn get(&self) -> &str {
+        // I would like to use this, however it doesn't work in a const-context
+        // to_str(&self.data[..self.len])
+
+        // so instead I abuse the fact that `split_last` is a `const`-`fn`
+        // to pop the last element off the slice until it's as long as
+        // `self.len`, which removes all trailing bytes
+        let mut data = &self.data as &[u8];
+
+        while self.len != data.len() {
+            if let Some((_, rest)) = data.split_last() {
+                data = rest;
+            } else {
+                unreachable!()
+            }
+        }
+
+        // Thankfully `core::str::from_utf8` is a `const`-`fn`
+        match core::str::from_utf8(data) {
+            Ok(x) => x,
+            Err(_) => unreachable!(),
+        }
+    }
+}
+
+const fn payload(first: u8, r: u8, g: u8, b: u8) -> Payload {
+    let mut len = 7;
+    let mut data = *b"\x1b[x8;2;rrr;ggg;bbbm";
+    data[2] = first;
 
     const fn d(mut x: u8, mut n: u8) -> u8 {
         while n != 0 {
@@ -176,70 +235,49 @@ const fn raw_args(r: u8, g: u8, b: u8) -> [u8; 13] {
         x % 10 + b'0'
     }
 
-    output[2] = d(r, 2);
-    output[3] = d(r, 1);
-    output[4] = d(r, 0);
-
-    output[6] = d(g, 2);
-    output[7] = d(g, 1);
-    output[8] = d(g, 0);
-
-    output[10] = d(b, 2);
-    output[11] = d(b, 1);
-    output[12] = d(b, 0);
-
-    output
-}
-
-const fn args(first: u8, r: u8, g: u8, b: u8) -> [u8; 16] {
-    let mut output = *b"x8;2;rrr;ggg;bbb";
-    output[0] = first;
-
-    const fn d(mut x: u8, mut n: u8) -> u8 {
-        while n != 0 {
-            x /= 10;
-            n -= 1;
-        }
-
-        x % 10 + b'0'
+    let x = r;
+    if x >= 100 {
+        data[len] = d(x, 2);
+        len += 1;
     }
-
-    output[5] = d(r, 2);
-    output[6] = d(r, 1);
-    output[7] = d(r, 0);
-
-    output[9] = d(g, 2);
-    output[10] = d(g, 1);
-    output[11] = d(g, 0);
-
-    output[13] = d(b, 2);
-    output[14] = d(b, 1);
-    output[15] = d(b, 0);
-
-    output
-}
-
-const fn escape(payload: [u8; 16]) -> [u8; 19] {
-    let mut output = [0; 19];
-    let mut i = 0;
-
-    output[0] = 0x1b;
-    output[1] = b'[';
-    output[18] = b'm';
-
-    while i < 16 {
-        output[i + 2] = payload[i];
-        i += 1;
+    if x >= 10 {
+        data[len] = d(x, 1);
+        len += 1;
     }
+    data[len] = d(x, 0);
+    len += 1;
+    data[len] = b';';
+    len += 1;
 
-    output
-}
-
-const fn to_str(x: &[u8]) -> &str {
-    match core::str::from_utf8(x) {
-        Ok(x) => x,
-        Err(_) => unreachable!(),
+    let x = g;
+    if x >= 100 {
+        data[len] = d(x, 2);
+        len += 1;
     }
+    if x >= 10 {
+        data[len] = d(x, 1);
+        len += 1;
+    }
+    data[len] = d(x, 0);
+    len += 1;
+    data[len] = b';';
+    len += 1;
+
+    let x = b;
+    if x >= 100 {
+        data[len] = d(x, 2);
+        len += 1;
+    }
+    if x >= 10 {
+        data[len] = d(x, 1);
+        len += 1;
+    }
+    data[len] = d(x, 0);
+    len += 1;
+    data[len] = b'm';
+    len += 1;
+
+    Payload { len, data }
 }
 
 /// A compile time Rgb color type
@@ -257,26 +295,32 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> Rgb<RED, GREEN, BLUE> {
         blue: BLUE,
     };
 
-    const FOREGROUND_ARGS_DATA: [u8; 16] = args(b'3', RED, GREEN, BLUE);
-    const BACKGROUND_ARGS_DATA: [u8; 16] = args(b'4', RED, GREEN, BLUE);
-    const UNDERLINE_ARGS_DATA: [u8; 16] = args(b'5', RED, GREEN, BLUE);
+    const FOREGROUND_DATA: Payload = payload(b'3', RED, GREEN, BLUE);
+    const BACKGROUND_DATA: Payload = payload(b'4', RED, GREEN, BLUE);
+    const UNDERLINE_DATA: Payload = payload(b'5', RED, GREEN, BLUE);
+
+    const FOREGROUND_ARGS_DATA: Payload = Self::FOREGROUND_DATA.args_payload();
+    const BACKGROUND_ARGS_DATA: Payload = Self::BACKGROUND_DATA.args_payload();
+    const UNDERLINE_ARGS_DATA: Payload = Self::UNDERLINE_DATA.args_payload();
+
+    const DATA: Payload = Self::FOREGROUND_DATA.raw_args_payload();
 
     /// The ANSI color args
-    pub const ARGS: &'static str = to_str(&raw_args(RED, GREEN, BLUE));
+    pub const ARGS: &'static str = Self::DATA.get();
 
     /// The ANSI foreground color arguments
-    pub const FOREGROUND_ARGS: &'static str = to_str(&Self::FOREGROUND_ARGS_DATA);
+    pub const FOREGROUND_ARGS: &'static str = Self::FOREGROUND_ARGS_DATA.get();
     /// The ANSI background color arguments
-    pub const BACKGROUND_ARGS: &'static str = to_str(&Self::BACKGROUND_ARGS_DATA);
+    pub const BACKGROUND_ARGS: &'static str = Self::BACKGROUND_ARGS_DATA.get();
     /// The ANSI underline color arguments
-    pub const UNDERLINE_ARGS: &'static str = to_str(&Self::UNDERLINE_ARGS_DATA);
+    pub const UNDERLINE_ARGS: &'static str = Self::UNDERLINE_ARGS_DATA.get();
 
     /// The ANSI foreground color sequence
-    pub const FOREGROUND_ESCAPE: &'static str = to_str(&escape(Self::FOREGROUND_ARGS_DATA));
+    pub const FOREGROUND_ESCAPE: &'static str = Self::FOREGROUND_DATA.get();
     /// The ANSI background color sequence
-    pub const BACKGROUND_ESCAPE: &'static str = to_str(&escape(Self::BACKGROUND_ARGS_DATA));
+    pub const BACKGROUND_ESCAPE: &'static str = Self::BACKGROUND_DATA.get();
     /// The ANSI underline color sequence
-    pub const UNDERLINE_ESCAPE: &'static str = to_str(&escape(Self::UNDERLINE_ARGS_DATA));
+    pub const UNDERLINE_ESCAPE: &'static str = Self::UNDERLINE_DATA.get();
 }
 
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> crate::seal::Seal for Rgb<RED, GREEN, BLUE> {}
