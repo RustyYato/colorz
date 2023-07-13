@@ -22,7 +22,9 @@ use core::sync::atomic::AtomicU8;
 
 static COLORING_MODE: AtomicU8 = AtomicU8::new(Mode::DETECT);
 static DEFAULT_STREAM: AtomicU8 = AtomicU8::new(Stream::AlwaysColor.encode());
+#[cfg(any(feature = "std", feature = "supports-color"))]
 static STDOUT_SUPPORT: AtomicU8 = AtomicU8::new(ColorSupport::DETECT);
+#[cfg(any(feature = "std", feature = "supports-color"))]
 static STDERR_SUPPORT: AtomicU8 = AtomicU8::new(ColorSupport::DETECT);
 
 /// The coloring mode
@@ -75,6 +77,7 @@ struct ColorSupport {
 }
 
 impl ColorSupport {
+    #[cfg(any(feature = "std", feature = "supports-color"))]
     const DETECT: u8 = 0x80;
 
     #[cfg(feature = "supports-color")]
