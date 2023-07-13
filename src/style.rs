@@ -607,9 +607,10 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     }
 
     fn fmt_apply_slow(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if self.effects.data.is_power_of_two() {
-            let effect = self.effects.iter().next().unwrap();
-            f.write_str(effect.apply_escape())?;
+        if self.effects.at_most_one_effect() {
+            if let Some(effect) = self.effects.iter().next() {
+                f.write_str(effect.apply_escape())?;
+            }
 
             if let Some(fg) = self.foreground.get() {
                 fg.fmt_foreground(f)?;
@@ -705,9 +706,10 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 
     #[cold]
     fn fmt_clear_slow(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if self.effects.data.is_power_of_two() {
-            let effect = self.effects.iter().next().unwrap();
-            f.write_str(effect.clear_escape())?;
+        if self.effects.at_most_one_effect() {
+            if let Some(effect) = self.effects.iter().next() {
+                f.write_str(effect.clear_escape())?;
+            }
 
             if self.foreground.get().is_some() {
                 ansi::Default.fmt_foreground(f)?;
