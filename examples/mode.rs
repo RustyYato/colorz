@@ -14,6 +14,9 @@ fn main() {
     // ```
     // cargo run --example mode
     // cargo run --example mode 2> /dev/null
+
+    // cargo run --example mode --features strip-colors
+    // cargo run --example mode --features strip-colors 2> /dev/null
     // ```
     //
     // NOTE: that colorize currently uses `std::io::IsTerminal` to detect

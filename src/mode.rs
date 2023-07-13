@@ -164,6 +164,7 @@ pub fn get_default_stream() -> Stream {
     Stream::decode(DEFAULT_STREAM.load(core::sync::atomic::Ordering::Acquire))
 }
 
+#[inline]
 pub(crate) fn should_color(stream: Option<Stream>, kinds: &[ColorKind]) -> bool {
     if cfg!(feature = "strip-colors") {
         return false;
@@ -187,7 +188,7 @@ pub(crate) fn should_color(stream: Option<Stream>, kinds: &[ColorKind]) -> bool 
     should_color_slow(is_stdout, kinds)
 }
 
-#[cold]
+#[inline]
 #[cfg(all(not(feature = "std"), not(feature = "supports-color")))]
 fn should_color_slow(_is_stdout: bool, _kinds: &[ColorKind]) -> bool {
     true
