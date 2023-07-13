@@ -28,11 +28,14 @@ fn main() {
 
     assert_eq!(mode::get_default_stream(), Stderr);
 
-    mode::set_coloring_mode_from_env();
-    println!("{}", "blue stderr".blue());
-    println!("{}", "blue stdout".blue().stream(Stdout));
-    println!("{}", "blue always".blue().stream(AlwaysColor));
-    println!("{}", "blue never".blue().stream(NeverColor));
+    #[cfg(feature = "std")]
+    {
+        mode::set_coloring_mode_from_env();
+        println!("{}", "blue stderr".blue());
+        println!("{}", "blue stdout".blue().stream(Stdout));
+        println!("{}", "blue always".blue().stream(AlwaysColor));
+        println!("{}", "blue never".blue().stream(NeverColor));
+    }
 
     println!("color mode=always");
     mode::set_coloring_mode(mode::Mode::Always);
