@@ -3,7 +3,7 @@ name = "colorz"
 version = "1.0.0"
 edition = "2021"
 
-documentation = "https://docs.rs/owo-colors"
+documentation = "https://docs.rs/colorz"
 repository = "https://github.com/RustyYato/colorz"
 
 readme = "README.md"
