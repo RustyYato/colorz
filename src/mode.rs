@@ -18,7 +18,7 @@
 #[cfg(doc)]
 use crate::StyledValue;
 
-use core::sync::atomic::AtomicU8;
+use core::{str::FromStr, sync::atomic::AtomicU8};
 
 static COLORING_MODE: AtomicU8 = AtomicU8::new(Mode::DETECT);
 static DEFAULT_STREAM: AtomicU8 = AtomicU8::new(Stream::AlwaysColor.encode());
@@ -28,6 +28,7 @@ static STDOUT_SUPPORT: AtomicU8 = AtomicU8::new(ColorSupport::DETECT);
 static STDERR_SUPPORT: AtomicU8 = AtomicU8::new(ColorSupport::DETECT);
 
 /// The coloring mode
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     /// use [`StyledValue::stream`] to pick when to color (by default always color if stream isn't specified)
     Detect,
@@ -35,6 +36,56 @@ pub enum Mode {
     Always,
     /// Never color [`StyledValue`]
     Never,
+}
+
+/// An error if deserializing a mode from a string fails
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ModeFromStrError;
+
+#[cfg(feature = "std")]
+impl std::error::Error for ModeFromStrError {}
+
+impl core::fmt::Display for ModeFromStrError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(r#"Invalid mode: valid options include "detect", "always", "never"#)
+    }
+}
+
+const ASCII_CASE_MASK: u8 = 0b0010_0000;
+const ASCII_CASE_MASK_SIMD: u64 = u64::from_ne_bytes([ASCII_CASE_MASK; 8]);
+
+impl FromStr for Mode {
+    type Err = ModeFromStrError;
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_ascii_bytes(s.as_bytes())
+    }
+}
+
+impl Mode {
+    /// Parse the mode from some ascii encoded bytes
+    #[inline]
+    pub const fn from_ascii_bytes(s: &[u8]) -> Result<Self, ModeFromStrError> {
+        const DETECT_STR: u64 = u64::from_ne_bytes(*b"detect\0\0") | ASCII_CASE_MASK_SIMD;
+        const ALWAYS_STR: u64 = u64::from_ne_bytes(*b"always\0\0") | ASCII_CASE_MASK_SIMD;
+        const NEVER_STR: u64 = u64::from_ne_bytes(*b"never\0\0\0") | ASCII_CASE_MASK_SIMD;
+
+        let data = match *s {
+            [a, b, c, d, e] => u64::from_ne_bytes([a, b, c, d, e, 0, 0, 0]),
+            [a, b, c, d, e, f] => u64::from_ne_bytes([a, b, c, d, e, f, 0, 0]),
+            _ => return Err(ModeFromStrError),
+        };
+
+        let data = data | ASCII_CASE_MASK_SIMD;
+
+        match data {
+            DETECT_STR => Ok(Mode::Detect),
+            ALWAYS_STR => Ok(Mode::Always),
+            NEVER_STR => Ok(Mode::Never),
+            _ => Err(ModeFromStrError),
+        }
+    }
 }
 
 /// The stream to detect when to color on
@@ -51,6 +102,42 @@ pub enum Stream {
     AlwaysColor,
     /// Never color, used to pick the coloring mode at runtime for a particular value
     NeverColor,
+}
+
+impl FromStr for Stream {
+    type Err = ModeFromStrError;
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_ascii_bytes(s.as_bytes())
+    }
+}
+
+impl Stream {
+    /// Parse the mode from some ascii encoded bytes
+    #[inline]
+    pub const fn from_ascii_bytes(s: &[u8]) -> Result<Self, ModeFromStrError> {
+        const STDOUT_STR: u64 = u64::from_ne_bytes(*b"stdout\0\0") | ASCII_CASE_MASK_SIMD;
+        const STDERR_STR: u64 = u64::from_ne_bytes(*b"stderr\0\0") | ASCII_CASE_MASK_SIMD;
+        const ALWAYS_STR: u64 = u64::from_ne_bytes(*b"always\0\0") | ASCII_CASE_MASK_SIMD;
+        const NEVER_STR: u64 = u64::from_ne_bytes(*b"never\0\0\0") | ASCII_CASE_MASK_SIMD;
+
+        let data = match *s {
+            [a, b, c, d, e] => u64::from_ne_bytes([a, b, c, d, e, 0, 0, 0]),
+            [a, b, c, d, e, f] => u64::from_ne_bytes([a, b, c, d, e, f, 0, 0]),
+            _ => return Err(ModeFromStrError),
+        };
+
+        let data = data | ASCII_CASE_MASK_SIMD;
+
+        match data {
+            STDERR_STR => Ok(Stream::Stderr),
+            STDOUT_STR => Ok(Stream::Stdout),
+            ALWAYS_STR => Ok(Stream::AlwaysColor),
+            NEVER_STR => Ok(Stream::NeverColor),
+            _ => Err(ModeFromStrError),
+        }
+    }
 }
 
 /// The coloring kinds
@@ -334,4 +421,76 @@ fn should_color_slow(is_stdout: bool, kinds: &[ColorKind]) -> bool {
     }
 
     true
+}
+
+#[cfg(test)]
+mod test {
+    use crate::mode::Mode;
+
+    use super::Stream;
+
+    extern crate std;
+
+    #[allow(clippy::needless_range_loop)]
+    fn test_case_insensitive_mode_from_str<const N: usize>(input: [u8; N], mode: Mode) {
+        for i in 0..1 << N {
+            let mut input = input;
+            for j in 0..input.len() {
+                if i & (1 << j) != 0 {
+                    input[j] = input[j].to_ascii_uppercase();
+                };
+            }
+
+            assert_eq!(Mode::from_ascii_bytes(&input), Ok(mode));
+        }
+    }
+
+    #[allow(clippy::needless_range_loop)]
+    fn test_case_insensitive_stream_from_str<const N: usize>(input: [u8; N], stream: Stream) {
+        for i in 0..1 << N {
+            let mut input = input;
+            for j in 0..input.len() {
+                if i & (1 << j) != 0 {
+                    input[j] = input[j].to_ascii_uppercase();
+                };
+            }
+
+            assert_eq!(Stream::from_ascii_bytes(&input), Ok(stream));
+        }
+    }
+
+    #[test]
+    fn mode_from_str_never() {
+        test_case_insensitive_mode_from_str(*b"never", Mode::Never);
+    }
+
+    #[test]
+    fn mode_from_str_always() {
+        test_case_insensitive_mode_from_str(*b"always", Mode::Always);
+    }
+
+    #[test]
+    fn mode_from_str_detect() {
+        test_case_insensitive_mode_from_str(*b"detect", Mode::Detect);
+    }
+
+    #[test]
+    fn stream_from_str_never() {
+        test_case_insensitive_stream_from_str(*b"never", Stream::NeverColor);
+    }
+
+    #[test]
+    fn stream_from_str_always() {
+        test_case_insensitive_stream_from_str(*b"always", Stream::AlwaysColor);
+    }
+
+    #[test]
+    fn stream_from_str_stdout() {
+        test_case_insensitive_stream_from_str(*b"stdout", Stream::Stdout);
+    }
+
+    #[test]
+    fn stream_from_str_stderr() {
+        test_case_insensitive_stream_from_str(*b"stderr", Stream::Stderr);
+    }
 }
