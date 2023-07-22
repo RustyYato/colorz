@@ -1,4 +1,4 @@
-use colorize::{xterm::XtermColor, Colorize};
+use colorz::{xterm::XtermColor, Colorize};
 
 fn main() {
     for i in 0..=255 {

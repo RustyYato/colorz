@@ -1,4 +1,4 @@
-use colorize::{
+use colorz::{
     mode,
     mode::Stream::{AlwaysColor, NeverColor, Stderr, Stdout},
     Colorize,
@@ -19,7 +19,7 @@ fn main() {
     // cargo run --example mode --features strip-colors 2> /dev/null
     // ```
     //
-    // NOTE: that colorize currently uses `std::io::IsTerminal` to detect
+    // NOTE: that colorz currently uses `std::io::IsTerminal` to detect
     // if stdin/stderr/stdout have been redirected
 
     assert_eq!(mode::get_default_stream(), AlwaysColor);

@@ -8,7 +8,7 @@ use crate::{ansi, mode::Stream, Color, ComptimeColor, OptionalColor, WriteColor}
 /// This type can be constructed via the various builder methods ([`foreground`](Self::foreground), [`bold`](Self::bold), etc.)
 ///
 /// ```
-/// use colorize::{Colorize, Style, ansi};
+/// use colorz::{Colorize, Style, ansi};
 ///
 /// let style = Style::new().fg(ansi::Red).bg(ansi::Yellow).bold();
 ///
@@ -19,7 +19,7 @@ use crate::{ansi, mode::Stream, Color, ComptimeColor, OptionalColor, WriteColor}
 ///
 ///
 /// ```
-/// # use colorize::{Colorize, Style, ansi};
+/// # use colorz::{Colorize, Style, ansi};
 /// # let style = Style::new().fg(ansi::Red).bg(ansi::Yellow).bold();
 /// let style = style.into_runtime_style();
 ///
@@ -422,7 +422,7 @@ Effect! {
     /// Makes the value bolded
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".bold());
     /// ```
@@ -431,7 +431,7 @@ Effect! {
     /// Makes the value faint
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".dimmed());
     /// ```
@@ -440,7 +440,7 @@ Effect! {
     /// Makes the value italics
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".italics());
     /// ```
@@ -449,7 +449,7 @@ Effect! {
     /// Makes the value underlined
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".underline());
     /// ```
@@ -458,7 +458,7 @@ Effect! {
     /// Makes the value double underlined
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".double_underline());
     /// ```
@@ -467,7 +467,7 @@ Effect! {
     /// Makes the value blink
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".blink());
     /// ```
@@ -476,7 +476,7 @@ Effect! {
     /// Makes the value blink fast
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".blink_fast());
     /// ```
@@ -485,7 +485,7 @@ Effect! {
     /// Makes the value reversed
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".reverse());
     /// ```
@@ -494,7 +494,7 @@ Effect! {
     /// Makes the value hidden
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".hide());
     /// ```
@@ -503,7 +503,7 @@ Effect! {
     /// Applies a strikethrough to the value
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".strikethrough());
     /// ```
@@ -512,7 +512,7 @@ Effect! {
     /// Applies an overline to the value
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".overline());
     /// ```
@@ -521,7 +521,7 @@ Effect! {
     /// Makes the value a superscript
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".superscript());
     /// ```
@@ -530,7 +530,7 @@ Effect! {
     /// Makes the value a subscript
     ///
     /// ```
-    /// use colorize::Colorize;
+    /// use colorz::Colorize;
     ///
     /// println!("{}", "hello world".subscript());
     /// ```

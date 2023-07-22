@@ -1,4 +1,4 @@
-use colorize::Style;
+use colorz::Style;
 
 #[test]
 fn test_effects() {
@@ -10,7 +10,7 @@ fn test_effects() {
 #[test]
 fn test_foreground() {
     let style = Style::new()
-        .fg(colorize::Color::Ansi(colorize::ansi::AnsiColor::Blue))
+        .fg(colorz::Color::Ansi(colorz::ansi::AnsiColor::Blue))
         .dimmed();
 
     assert_eq!(format!("{}", style.apply()), "\x1b[2m\x1b[34m")
@@ -19,7 +19,7 @@ fn test_foreground() {
 #[test]
 fn test_background() {
     let style = Style::new()
-        .bg(colorize::Color::Ansi(colorize::ansi::AnsiColor::Blue))
+        .bg(colorz::Color::Ansi(colorz::ansi::AnsiColor::Blue))
         .dimmed();
 
     assert_eq!(format!("{}", style.apply()), "\x1b[2m\x1b[44m");
@@ -27,8 +27,8 @@ fn test_background() {
 
 #[test]
 fn test_partial() {
-    let background = Style::new().bg(colorize::Color::Ansi(colorize::ansi::AnsiColor::Red));
-    let style = Style::new().fg(colorize::Color::Ansi(colorize::ansi::AnsiColor::Blue));
+    let background = Style::new().bg(colorz::Color::Ansi(colorz::ansi::AnsiColor::Red));
+    let style = Style::new().fg(colorz::Color::Ansi(colorz::ansi::AnsiColor::Blue));
 
     let x = format!(
         "{}hello {}my{} world{}",
@@ -43,7 +43,7 @@ fn test_partial() {
 
 #[test]
 fn test_rgb() {
-    let style = Style::new().bg(colorize::Color::Rgb(colorize::rgb::RgbColor {
+    let style = Style::new().bg(colorz::Color::Rgb(colorz::rgb::RgbColor {
         red: 255,
         green: 128,
         blue: 0,
@@ -54,12 +54,12 @@ fn test_rgb() {
 
 #[test]
 fn test_rgb_const() {
-    let style = Style::new().bg(colorize::rgb::Rgb::<255, 0, 18>);
+    let style = Style::new().bg(colorz::rgb::Rgb::<255, 0, 18>);
 
     assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;0;18m");
 
     assert_eq!(
-        colorize::rgb::Rgb::<255, 0, 18>::FOREGROUND_ARGS,
+        colorz::rgb::Rgb::<255, 0, 18>::FOREGROUND_ARGS,
         "38;2;255;0;18"
     );
 }
@@ -67,7 +67,7 @@ fn test_rgb_const() {
 #[test]
 fn test_rgb_to_runtime() {
     let style = Style::new()
-        .bg(colorize::rgb::Rgb::<255, 128, 0>)
+        .bg(colorz::rgb::Rgb::<255, 128, 0>)
         .into_runtime_style();
 
     assert_eq!(format!("{}", style.apply()), "\x1b[48;2;255;128;0m");

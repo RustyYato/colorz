@@ -1,11 +1,11 @@
-# colorize
+# colorz
 
 A zero-alloc, `no_std` compatible way of coloring your terminal outputs!
 
 This is a "fork" of [owo-colors](https://github.com/jam1garner/owo-colors) with more features.
 
 ```rust
-use colorize::{Colorize, xterm};
+use colorz::{Colorize, xterm};
 
 // will print `hello world` in red
 println!("{}", "hello world".red());
@@ -20,7 +20,7 @@ Features:
 * Format using a custom format function (`StyledValue::fmt_with`)
 * Per-value conditional styling via `StyledValue::stream`
 * Global conditional styling for all `StyledValue`s via
-    * `colorize::mode`
+    * `colorz::mode`
     * `strip-colors` feature flag
 * zero-dependency by default
 * Standard names for Ansi, Xterm, and Css colors
@@ -32,7 +32,7 @@ Features:
 * compile-time selection of xterm colors by color code
 * compile-time style construction
 * compile-time style value construction
-* `NO_COLOR`/`ALWAYS_COLOR` environment variables: `colorize::mode::{Mode::from_env, set_coloring_mode_from_env}`
+* `NO_COLOR`/`ALWAYS_COLOR` environment variables: `colorz::mode::{Mode::from_env, set_coloring_mode_from_env}`
     * requires `std` or `supports-color` feature
 
 ## Feature Flags
@@ -47,7 +47,7 @@ None of the feature is enabled by default. And they should only be turned on by 
 If these features are turned off, then only the global mode settings is respected, and no stream-based
 color detection is done.
 
-if `strip-colors` is enabled, then `colorize::mode::get_coloring_mode` will always
+if `strip-colors` is enabled, then `colorz::mode::get_coloring_mode` will always
 return `Mode::Never`, and `StyledValue` will never be colored.
 
 else if `supports-color` is enabled, then the `supports-color` crate is used to detect if
@@ -56,7 +56,7 @@ color types, then it will not do any coloring.
 For example, if you terminal doesn't support Xterm colors, and you write
 
 ```rust
-use colorize::{Colorize, xterm};
+use colorz::{Colorize, xterm};
 
 println!("{}", "hello world".fg(xterm::Red));
 ```
@@ -68,8 +68,8 @@ finally if `std` is enabled, then if the stream is a terminal then all coloring 
 
 ## Coloring Mode
 
-There are many ways to specify the coloring mode for `colorize`, and it may not be obvious how
-they interact, so here is a precedence list. To figure out how colorize chooses to colorize, go
+There are many ways to specify the coloring mode for `colorz`, and it may not be obvious how
+they interact, so here is a precedence list. To figure out how colorz chooses to colorz, go
 down the list, and the first element that applies will be selected.
 
 * if the feature flag `strip-colors` is enabled -> NO COLORING
@@ -96,7 +96,7 @@ coloring regardless of the current coloring mode. You can use `Style::should_col
 should be used based on the current coloring mode.
 
 ```rust
-use colorize::{Style, xterm, mode::Stream};
+use colorz::{Style, xterm, mode::Stream};
 
 let style = Style::new().fg(xterm::Aquamarine);
 
@@ -113,7 +113,7 @@ if style.should_color(None) {
 
 Format any value
 ```rust
-use colorize::{Colorize, xterm, css};
+use colorz::{Colorize, xterm, css};
 
 #[derive(Debug)]
 struct MyType {
@@ -130,7 +130,7 @@ println!("{:?}", MyType { value: "hello world".into() }.underline_color(xterm::A
 
 With conditional formatting per value
 ```rust
-use colorize::{Colorize, xterm, mode::Stream::*};
+use colorz::{Colorize, xterm, mode::Stream::*};
 
 // will print `hello world` in red if Stdout points to a terminal
 println!("{}", "hello world".red().stream(Stdout));
@@ -138,9 +138,9 @@ println!("{}", "hello world".red().stream(Stdout));
 
 Easily turn it off at any time
 ```rust
-use colorize::{Colorize, xterm, mode::Stream::*};
+use colorz::{Colorize, xterm, mode::Stream::*};
 
-colorize::mode::set_coloring_mode(colorize::mode::Mode::Never);
+colorz::mode::set_coloring_mode(colorz::mode::Mode::Never);
 
 // doesn't style the value
 println!("{}", "hello world".red());
@@ -150,7 +150,7 @@ assert_eq!(format!("{}", "hello world".red()), "hello world");
 
 Create compile time style sheets
 ```rust
-use colorize::{Colorize, Style, Effect, xterm};
+use colorz::{Colorize, Style, Effect, xterm};
 
 const MY_STYLE: Style = Style::new()
     .fg(xterm::ForestGreen)

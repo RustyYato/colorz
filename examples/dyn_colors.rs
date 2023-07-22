@@ -1,4 +1,4 @@
-use colorize::{ansi::AnsiColor, rgb::RgbColor, xterm::XtermColor, Color, Colorize};
+use colorz::{ansi::AnsiColor, rgb::RgbColor, xterm::XtermColor, Color, Colorize};
 
 fn random_number() -> u32 {
     2
@@ -22,7 +22,7 @@ fn main() {
     println!("{}", "custom purple".fg(color));
 
     let color = match random_number() {
-        1 => Color::Rgb(colorize::rgb::RgbColor {
+        1 => Color::Rgb(colorz::rgb::RgbColor {
             red: 141,
             green: 59,
             blue: 212,

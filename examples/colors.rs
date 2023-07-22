@@ -1,4 +1,4 @@
-use colorize::{ansi::*, Colorize};
+use colorz::{ansi::*, Colorize};
 
 fn main() {
     // normal usage
