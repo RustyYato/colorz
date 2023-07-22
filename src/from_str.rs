@@ -29,6 +29,7 @@ const fn merge(a: u8, b: u8) -> u8 {
 impl FromStr for Color {
     type Err = ParseColorError;
 
+    #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s.as_bytes() {
             &[b'#', a, b, c, d, e, f] => {

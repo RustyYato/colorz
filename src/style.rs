@@ -48,6 +48,7 @@ pub struct EffectFlags {
 }
 
 impl core::fmt::Debug for EffectFlags {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_set().entries(*self).finish()
     }
@@ -270,6 +271,7 @@ impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
     }
 
     /// Clear a styling
+    #[inline]
     pub fn clear_all() -> impl core::fmt::Display + core::fmt::Debug {
         struct ClearAll;
 
@@ -402,6 +404,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 
 impl<F: Into<Option<Color>>, B: Into<Option<Color>>, U: Into<Option<Color>>> Style<F, B, U> {
     /// Convert to a type-erased style
+    #[inline]
     pub fn into_runtime_style(self) -> Style {
         Style {
             foreground: self.foreground.into(),
@@ -414,6 +417,7 @@ impl<F: Into<Option<Color>>, B: Into<Option<Color>>, U: Into<Option<Color>>> Sty
 
 impl<F: ComptimeColor, B: ComptimeColor, U: ComptimeColor> Style<F, B, U> {
     /// Convert to a type-erased style
+    #[inline]
     pub const fn const_into_runtime_style(self) -> Style {
         Style {
             foreground: F::VALUE,
@@ -551,6 +555,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     /// Should you color based on the current coloring mode
     ///
     /// See `Coloring Mode` in the crate docs for details
+    #[inline]
     pub fn should_color(&self, stream: impl Into<Option<Stream>>) -> bool {
         crate::mode::should_color(
             stream.into(),
@@ -765,6 +770,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     }
 
     /// Writes the ANSI color and effect codes
+    #[inline]
     pub fn apply(self) -> impl core::fmt::Display + core::fmt::Debug {
         struct Prefix<F, B, U> {
             style: Style<F, B, U>,
@@ -788,6 +794,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     }
 
     /// Writes the ANSI color and effect clear codes (reverses whatever [`apply`](Self::apply) did)
+    #[inline]
     pub fn clear(self) -> impl core::fmt::Display + core::fmt::Debug {
         struct Suffix<F, B, U> {
             style: Style<F, B, U>,
@@ -818,6 +825,7 @@ pub struct EffectFlagsIter {
 }
 
 impl core::fmt::Debug for EffectFlagsIter {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_set().entries(self.clone()).finish()
     }
@@ -838,6 +846,7 @@ impl<'a> From<&'a mut Effect> for Effect {
 }
 
 impl<E: Into<Effect>> FromIterator<E> for EffectFlags {
+    #[inline]
     fn from_iter<T: IntoIterator<Item = E>>(iter: T) -> Self {
         iter.into_iter()
             .map(Into::into)

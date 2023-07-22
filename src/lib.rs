@@ -5,7 +5,7 @@
     missing_debug_implementations,
     missing_copy_implementations,
     clippy::missing_const_for_fn,
-    // clippy::missing_inline_in_public_items
+    clippy::missing_inline_in_public_items
 )]
 #![cfg_attr(doc, feature(doc_cfg))]
 
@@ -98,30 +98,37 @@ pub trait ColorSpec: seal::Seal {
 }
 
 impl<C: ColorSpec> WriteColor for C {
+    #[inline]
     fn color_kind(self) -> mode::ColorKind {
         C::KIND
     }
 
+    #[inline]
     fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.foreground_args())
     }
 
+    #[inline]
     fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.background_args())
     }
 
+    #[inline]
     fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.underline_args())
     }
 
+    #[inline]
     fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.foreground_escape())
     }
 
+    #[inline]
     fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.background_escape())
     }
 
+    #[inline]
     fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(self.underline_escape())
     }
@@ -144,6 +151,7 @@ pub trait WriteColor: seal::Seal {
     fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
 
     /// write the foreground color sequence
+    #[inline]
     fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[")?;
         self.fmt_foreground_args(f)?;
@@ -151,6 +159,7 @@ pub trait WriteColor: seal::Seal {
     }
 
     /// write the background color sequence
+    #[inline]
     fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[")?;
         self.fmt_background_args(f)?;
@@ -158,6 +167,7 @@ pub trait WriteColor: seal::Seal {
     }
 
     /// write the underline color sequence
+    #[inline]
     fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("\x1b[58;")?;
         self.fmt_underline_args(f)?;
@@ -167,6 +177,7 @@ pub trait WriteColor: seal::Seal {
 
 impl seal::Seal for Color {}
 impl WriteColor for Color {
+    #[inline]
     fn color_kind(self) -> mode::ColorKind {
         match self {
             Color::Ansi(_) => mode::ColorKind::Ansi,
@@ -176,6 +187,7 @@ impl WriteColor for Color {
         }
     }
 
+    #[inline]
     fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_foreground_args(f),
@@ -185,6 +197,7 @@ impl WriteColor for Color {
         }
     }
 
+    #[inline]
     fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_background_args(f),
@@ -194,6 +207,7 @@ impl WriteColor for Color {
         }
     }
 
+    #[inline]
     fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_underline_args(f),
@@ -203,6 +217,7 @@ impl WriteColor for Color {
         }
     }
 
+    #[inline]
     fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_foreground(f),
@@ -212,6 +227,7 @@ impl WriteColor for Color {
         }
     }
 
+    #[inline]
     fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_background(f),
@@ -221,6 +237,7 @@ impl WriteColor for Color {
         }
     }
 
+    #[inline]
     fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Color::Ansi(color) => color.fmt_underline(f),
@@ -233,18 +250,22 @@ impl WriteColor for Color {
 
 impl seal::Seal for core::convert::Infallible {}
 impl WriteColor for core::convert::Infallible {
+    #[inline]
     fn color_kind(self) -> mode::ColorKind {
         match self {}
     }
 
+    #[inline]
     fn fmt_foreground_args(self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {}
     }
 
+    #[inline]
     fn fmt_background_args(self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {}
     }
 
+    #[inline]
     fn fmt_underline_args(self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {}
     }
@@ -270,6 +291,7 @@ pub trait OptionalColor: seal::Seal {
     fn get(self) -> Option<Self::Color>;
 
     /// Get the color value
+    #[inline]
     fn color_kind(self) -> mode::ColorKind {
         self.get()
             .map(WriteColor::color_kind)

@@ -49,6 +49,7 @@ macro_rules! Css {
 
         $(
             impl From<$name> for CssColor {
+                #[inline]
                 fn from(_: $name) -> Self {
                     Self::$name
                 }

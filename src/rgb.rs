@@ -114,10 +114,12 @@ impl RgbBuffer {
 
 impl crate::seal::Seal for RgbColor {}
 impl WriteColor for RgbColor {
+    #[inline]
     fn color_kind(self) -> crate::mode::ColorKind {
         crate::mode::ColorKind::Rgb
     }
 
+    #[inline]
     fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
         buffer.write_args_header(Layer::Foreground);
@@ -125,6 +127,7 @@ impl WriteColor for RgbColor {
         f.write_str(buffer.to_str())
     }
 
+    #[inline]
     fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
         buffer.write_args_header(Layer::Background);
@@ -132,6 +135,7 @@ impl WriteColor for RgbColor {
         f.write_str(buffer.to_str())
     }
 
+    #[inline]
     fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
         buffer.write_args_header(Layer::Underline);
@@ -139,6 +143,7 @@ impl WriteColor for RgbColor {
         f.write_str(buffer.to_str())
     }
 
+    #[inline]
     fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
         buffer.write_escape_start(Layer::Foreground);
@@ -147,6 +152,7 @@ impl WriteColor for RgbColor {
         f.write_str(buffer.to_str())
     }
 
+    #[inline]
     fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
         buffer.write_escape_start(Layer::Background);
@@ -155,6 +161,7 @@ impl WriteColor for RgbColor {
         f.write_str(buffer.to_str())
     }
 
+    #[inline]
     fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
         buffer.write_escape_start(Layer::Underline);

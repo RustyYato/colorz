@@ -46,6 +46,7 @@ pub struct ModeFromStrError;
 impl std::error::Error for ModeFromStrError {}
 
 impl core::fmt::Display for ModeFromStrError {
+    #[inline]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(r#"Invalid mode: valid options include "detect", "always", "never""#)
     }
@@ -112,6 +113,7 @@ pub struct StreamFromStrError;
 impl std::error::Error for StreamFromStrError {}
 
 impl core::fmt::Display for StreamFromStrError {
+    #[inline]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(r#"Invalid mode: valid options include "stdout", "stderr", "always", "never""#)
     }
@@ -265,6 +267,7 @@ impl Stream {
     }
 }
 
+#[inline]
 /// Set the global coloring mode (this allows forcing colors on or off despite stream preferences)
 pub fn set_coloring_mode(mode: Mode) {
     if cfg!(feature = "strip-colors") {
@@ -279,6 +282,7 @@ pub fn set_coloring_mode(mode: Mode) {
 /// if no relevant environment variables are set, then the coloring mode is left unchanged
 ///
 /// see [`Mode::from_env`] for details on which env vars are supported
+#[inline]
 #[cfg(feature = "std")]
 #[cfg_attr(doc, doc(cfg(feature = "std")))]
 pub fn set_coloring_mode_from_env() {
@@ -292,6 +296,7 @@ pub fn set_coloring_mode_from_env() {
 }
 
 /// Get the global coloring mode
+#[inline]
 pub fn get_coloring_mode() -> Mode {
     if cfg!(feature = "strip-colors") {
         return Mode::Never;
@@ -301,6 +306,7 @@ pub fn get_coloring_mode() -> Mode {
 }
 
 /// Set the default stream if one isn't chosen per value
+#[inline]
 pub fn set_default_stream(stream: Stream) {
     DEFAULT_STREAM.store(
         Stream::encode(stream),
@@ -309,6 +315,7 @@ pub fn set_default_stream(stream: Stream) {
 }
 
 /// Get the default stream
+#[inline]
 pub fn get_default_stream() -> Stream {
     Stream::decode(DEFAULT_STREAM.load(core::sync::atomic::Ordering::Acquire))
 }

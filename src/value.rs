@@ -4,6 +4,7 @@ use crate::{ansi, mode::Stream, Effect, OptionalColor, Style, StyledValue};
 
 impl<T, F, B, U> StyledValue<T, F, B, U> {
     /// Create a new styled value
+    #[inline]
     pub const fn new(value: T, style: Style<F, B, U>, stream: Option<Stream>) -> Self {
         Self {
             value,
@@ -21,6 +22,7 @@ macro_rules! AnsiColorMethods {
         /// An extension trait for all values which adds convenience formatting functions
         pub trait Colorize {
             /// Convert a value to a `StyledValue`
+            #[inline]
             fn into_style(self) -> StyledValue<Self>
             where
                 Self: Sized,
@@ -33,6 +35,7 @@ macro_rules! AnsiColorMethods {
             }
 
             /// Convert a value to a `StyledValue`
+            #[inline]
             fn style(&self) -> StyledValue<&Self> {
                 StyledValue {
                     value: self,
@@ -42,6 +45,7 @@ macro_rules! AnsiColorMethods {
             }
 
             /// Convert a value to a `StyledValue` and applies the given style
+            #[inline]
             fn into_style_with<F, B, U>(self, style: Style<F, B, U>) -> StyledValue<Self, F, B, U>
             where
                 Self: Sized,
@@ -54,6 +58,7 @@ macro_rules! AnsiColorMethods {
             }
 
             /// Convert a value to a `StyledValue` and applies the given style
+            #[inline]
             fn style_with<F, B, U>(&self, style: Style<F, B, U>) -> StyledValue<&Self, F, B, U> {
                 StyledValue {
                     value: self,
@@ -63,56 +68,62 @@ macro_rules! AnsiColorMethods {
             }
 
             /// Changes the foreground color
+            #[inline]
             fn fg<C>(&self, color: C) -> StyledValue<&Self, C> {
                 self.style().fg(color)
             }
 
             /// Changes the foreground color
+            #[inline]
             fn into_fg<C>(self, color: C) -> StyledValue<Self, C> where Self: Sized {
                 self.into_style().fg(color)
             }
 
             /// Changes the background color
+            #[inline]
             fn bg<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, C> {
                 self.style().bg(color)
             }
 
             /// Changes the background color
+            #[inline]
             fn into_bg<C>(self, color: C) -> StyledValue<Self, crate::NoColor, C> where Self: Sized {
                 self.into_style().bg(color)
             }
 
             /// Changes the underline color
+            #[inline]
             fn underline_color<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, crate::NoColor, C> {
                 self.style().underline_color(color)
             }
 
             /// Changes the underline color
+            #[inline]
             fn into_underline_color<C>(self, color: C) -> StyledValue<Self, crate::NoColor, crate::NoColor, C> where Self: Sized {
                 self.into_style().underline_color(color)
             }
 
-            $(#[$fg] fn $fun(&self) -> StyledValue<&Self, ansi::$color> {
+            $(#[$fg] #[inline] fn $fun(&self) -> StyledValue<&Self, ansi::$color> {
                 self.style().$fun()
             })*
 
-            $(#[$bg] fn $on_fun(&self) -> StyledValue<&Self, crate::NoColor, ansi::$color> {
+            $(#[$bg] #[inline] fn $on_fun(&self) -> StyledValue<&Self, crate::NoColor, ansi::$color> {
                 self.style().$on_fun()
             })*
 
-            $(#[$fg] fn $into_fun(self) -> StyledValue<Self, ansi::$color> where Self: Sized{
+            $(#[$fg] #[inline] fn $into_fun(self) -> StyledValue<Self, ansi::$color> where Self: Sized{
                 self.into_style().$fun()
             })*
 
-            $(#[$bg] fn $into_on_fun(self) -> StyledValue<Self, crate::NoColor, ansi::$color> where Self: Sized {
+            $(#[$bg] #[inline] fn $into_on_fun(self) -> StyledValue<Self, crate::NoColor, ansi::$color> where Self: Sized {
                 self.into_style().$on_fun()
             })*
 
-            $(#[$doc] fn $effect_fun(&self) -> StyledValue<&Self> {
+            $(#[$doc] #[inline] fn $effect_fun(&self) -> StyledValue<&Self> {
                 self.style().$effect_fun()
             })*
 
-            $(#[$doc] fn $into_effect_fun(self) -> StyledValue<Self> where Self: Sized {
+            $(#[$doc] #[inline] fn $into_effect_fun(self) -> StyledValue<Self> where Self: Sized {
                 self.into_style().$effect_fun()
             })*
         }
@@ -291,6 +302,7 @@ AnsiColorMethods! {
 
 impl<T, F: OptionalColor, B: OptionalColor, U: OptionalColor> StyledValue<T, F, B, U> {
     /// Writes a styled value with the given value formatter
+    #[inline]
     pub fn fmt_with(
         &self,
         fmt: &mut fmt::Formatter<'_>,
@@ -314,6 +326,7 @@ macro_rules! fmt_impl {
         impl<T: fmt::$name, F: OptionalColor, B: OptionalColor, U: OptionalColor> fmt::$name
             for StyledValue<T, F, B, U>
         {
+            #[inline]
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.fmt_with(f, fmt::$name::fmt)
             }
