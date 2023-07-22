@@ -47,7 +47,7 @@ impl std::error::Error for ModeFromStrError {}
 
 impl core::fmt::Display for ModeFromStrError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str(r#"Invalid mode: valid options include "detect", "always", "never"#)
+        f.write_str(r#"Invalid mode: valid options include "detect", "always", "never""#)
     }
 }
 
@@ -104,8 +104,21 @@ pub enum Stream {
     NeverColor,
 }
 
+/// An error if deserializing a mode from a string fails
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StreamFromStrError;
+
+#[cfg(feature = "std")]
+impl std::error::Error for StreamFromStrError {}
+
+impl core::fmt::Display for StreamFromStrError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(r#"Invalid mode: valid options include "stdout", "stderr", "always", "never""#)
+    }
+}
+
 impl FromStr for Stream {
-    type Err = ModeFromStrError;
+    type Err = StreamFromStrError;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -116,7 +129,7 @@ impl FromStr for Stream {
 impl Stream {
     /// Parse the mode from some ascii encoded bytes
     #[inline]
-    pub const fn from_ascii_bytes(s: &[u8]) -> Result<Self, ModeFromStrError> {
+    pub const fn from_ascii_bytes(s: &[u8]) -> Result<Self, StreamFromStrError> {
         const STDOUT_STR: u64 = u64::from_ne_bytes(*b"stdout\0\0") | ASCII_CASE_MASK_SIMD;
         const STDERR_STR: u64 = u64::from_ne_bytes(*b"stderr\0\0") | ASCII_CASE_MASK_SIMD;
         const ALWAYS_STR: u64 = u64::from_ne_bytes(*b"always\0\0") | ASCII_CASE_MASK_SIMD;
@@ -125,7 +138,7 @@ impl Stream {
         let data = match *s {
             [a, b, c, d, e] => u64::from_ne_bytes([a, b, c, d, e, 0, 0, 0]),
             [a, b, c, d, e, f] => u64::from_ne_bytes([a, b, c, d, e, f, 0, 0]),
-            _ => return Err(ModeFromStrError),
+            _ => return Err(StreamFromStrError),
         };
 
         let data = data | ASCII_CASE_MASK_SIMD;
@@ -135,7 +148,7 @@ impl Stream {
             STDOUT_STR => Ok(Stream::Stdout),
             ALWAYS_STR => Ok(Stream::AlwaysColor),
             NEVER_STR => Ok(Stream::NeverColor),
-            _ => Err(ModeFromStrError),
+            _ => Err(StreamFromStrError),
         }
     }
 }
