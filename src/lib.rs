@@ -1,6 +1,12 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
-#![forbid(unsafe_code, missing_docs)]
+#![forbid(unsafe_code, missing_docs, clippy::missing_panics_doc)]
+#![deny(
+    missing_debug_implementations,
+    missing_copy_implementations,
+    clippy::missing_const_for_fn,
+    // clippy::missing_inline_in_public_items
+)]
 #![cfg_attr(doc, feature(doc_cfg))]
 
 #[cfg(feature = "alloc")]
@@ -43,7 +49,7 @@ pub use style::{Effect, EffectFlags, EffectFlagsIter, Style};
 pub struct NoColor;
 
 /// A runtime color args
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color {
     /// The ANSI color type (see [`ansi`] for details)
     Ansi(ansi::AnsiColor),
@@ -245,6 +251,7 @@ impl WriteColor for core::convert::Infallible {
 }
 
 #[doc(hidden)]
+#[derive(Debug, Clone, Copy)]
 pub enum Kind {
     MaybeSome,
     AlwaysSome,

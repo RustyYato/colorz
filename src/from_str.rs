@@ -1,7 +1,7 @@
 use core::str::FromStr;
 
 use crate::{ansi::AnsiColor, Color};
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 /// An error type for parsing colors
 pub enum ParseColorError {
     /// An invalid hex digit was detected
@@ -13,7 +13,7 @@ pub enum ParseColorError {
 }
 
 #[inline(always)]
-fn parse_hex_digit(x: u8) -> Result<u8, ParseColorError> {
+const fn parse_hex_digit(x: u8) -> Result<u8, ParseColorError> {
     match x {
         b'0'..=b'9' => Ok(x - b'0'),
         b'A'..=b'F' => Ok(x - b'A' + 10),
@@ -22,7 +22,7 @@ fn parse_hex_digit(x: u8) -> Result<u8, ParseColorError> {
     }
 }
 
-fn merge(a: u8, b: u8) -> u8 {
+const fn merge(a: u8, b: u8) -> u8 {
     a << 4 | b
 }
 

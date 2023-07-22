@@ -6,7 +6,7 @@ use crate::{ColorSpec, WriteColor};
 use crate::Color;
 
 /// An Rgb value for color
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RgbColor {
     /// The red component of the color
     pub red: u8,
@@ -29,7 +29,7 @@ enum Layer {
 }
 
 impl RgbBuffer {
-    fn new() -> Self {
+    const fn new() -> Self {
         RgbBuffer {
             // we chose `;` so we don't need to write the seperator each time
             // which saves a little bit of time

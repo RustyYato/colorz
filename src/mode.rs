@@ -338,6 +338,7 @@ pub(crate) fn should_color(stream: Option<Stream>, kinds: &[ColorKind]) -> bool 
 }
 
 #[inline]
+#[allow(clippy::missing_const_for_fn)]
 #[cfg(all(not(feature = "std"), not(feature = "supports-color")))]
 fn should_color_slow(_is_stdout: bool, _kinds: &[ColorKind]) -> bool {
     true

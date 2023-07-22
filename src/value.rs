@@ -199,7 +199,7 @@ macro_rules! AnsiColorMethods {
             }
         }
 
-        fn _all_effects_accounted_for(e: Effect) {
+        const fn _all_effects_accounted_for(e: Effect) {
             match e {
                 $(Effect::$effect => (),)*
             }

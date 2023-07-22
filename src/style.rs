@@ -27,7 +27,7 @@ use crate::{ansi, mode::Stream, Color, ComptimeColor, OptionalColor, WriteColor}
 /// ```
 #[non_exhaustive]
 #[must_use = "A `Style` value doesn't do anything on it's own"]
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Style<F = Option<Color>, B = Option<Color>, U = Option<Color>> {
     /// The foreground color
     pub foreground: F,
@@ -47,11 +47,17 @@ pub struct EffectFlags {
     data: u16,
 }
 
+impl core::fmt::Debug for EffectFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_set().entries(*self).finish()
+    }
+}
+
 macro_rules! Effect {
     ($($(#[$meta:meta])* $name:ident $apply:literal $clear:literal -> $set_func:ident,)*) => {
         /// An effect that can be applied to values
         #[repr(u8)]
-        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum Effect {
             $($(#[$meta])* $name,)*
         }
@@ -99,7 +105,7 @@ macro_rules! Effect {
 
             /// The ANSI effect args
             #[inline]
-            pub fn apply_args(self) -> &'static str {
+            pub const fn apply_args(self) -> &'static str {
                 match self {
                     $(Self::$name => apply::$name,)*
                 }
@@ -107,7 +113,7 @@ macro_rules! Effect {
 
             /// The ANSI effect removal args
             #[inline]
-            pub fn clear_args(self) -> &'static str {
+            pub const fn clear_args(self) -> &'static str {
                 match self {
                     $(Self::$name => disable::$name,)*
                 }
@@ -115,7 +121,7 @@ macro_rules! Effect {
 
             /// The ANSI effect sequence
             #[inline]
-            pub fn apply_escape(self) -> &'static str {
+            pub const fn apply_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => apply_escape::$name,)*
                 }
@@ -123,7 +129,7 @@ macro_rules! Effect {
 
             /// The ANSI effect removal sequence
             #[inline]
-            pub fn clear_escape(self) -> &'static str {
+            pub const fn clear_escape(self) -> &'static str {
                 match self {
                     $(Self::$name => disable_escape::$name,)*
                 }
@@ -137,7 +143,7 @@ macro_rules! Effect {
         impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {$(
             $(#[$meta])*
             #[inline(always)]
-            pub fn $set_func(self) -> Self {
+            pub const fn $set_func(self) -> Self {
                 self.with(Effect::$name)
             }
         )*}
@@ -299,7 +305,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 
     /// Set the background color
     #[inline(always)]
-    pub fn bg<T>(self, color: T) -> Style<F, T, U> {
+    pub const fn bg<T>(self, color: T) -> Style<F, T, U> {
         Style {
             foreground: self.foreground,
             background: color,
@@ -310,7 +316,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 
     /// Set the underline color
     #[inline(always)]
-    pub fn underline_color<T>(self, color: T) -> Style<F, B, T> {
+    pub const fn underline_color<T>(self, color: T) -> Style<F, B, T> {
         Style {
             foreground: self.foreground,
             background: self.background,
@@ -806,8 +812,15 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
 }
 
 /// An iterator for teh [`EffectFlags`] type, which yields [`Effect`]s
+#[derive(Clone)]
 pub struct EffectFlagsIter {
     data: u16,
+}
+
+impl core::fmt::Debug for EffectFlagsIter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_set().entries(self.clone()).finish()
+    }
 }
 
 impl<'a> From<&'a Effect> for Effect {
