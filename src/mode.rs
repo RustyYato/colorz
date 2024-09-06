@@ -170,6 +170,7 @@ pub enum ColorKind {
     NoColor,
 }
 
+#[cfg(any(feature = "std", feature = "supports-color"))]
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct ColorSupport {
@@ -178,8 +179,8 @@ struct ColorSupport {
     rgb: bool,
 }
 
+#[cfg(any(feature = "std", feature = "supports-color"))]
 impl ColorSupport {
-    #[cfg(any(feature = "std", feature = "supports-color"))]
     const DETECT: u8 = 0x80;
 
     #[cfg(feature = "supports-color")]

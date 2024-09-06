@@ -254,6 +254,13 @@ impl EffectFlags {
     }
 }
 
+impl Default for EffectFlags {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
     /// Create a new style
     #[inline(always)]
@@ -290,6 +297,13 @@ impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
         }
 
         ClearAll
+    }
+}
+
+impl Default for Style<crate::NoColor, crate::NoColor, crate::NoColor> {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -818,7 +832,7 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
     }
 }
 
-/// An iterator for teh [`EffectFlags`] type, which yields [`Effect`]s
+/// An iterator for the [`EffectFlags`] type, which yields [`Effect`]s
 #[derive(Clone)]
 pub struct EffectFlagsIter {
     data: u16,

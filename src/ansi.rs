@@ -12,7 +12,7 @@ macro_rules! MkAnsiColor {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum AnsiColor {
             $(
-                #[doc = concat!("The runtime version of [`", stringify!($name), "`](self::", stringify!($name), ")")]
+                #[doc = concat!("The runtime version of [`", stringify!($name), "`](struct@self::", stringify!($name), ")")]
                 #[doc = concat!(" repesenting the color args ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
                 $name,
             )*
