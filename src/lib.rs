@@ -97,12 +97,19 @@ mod seal {
     pub trait Seal: Copy {}
 }
 
-/// A sealed trait for describing ANSI color args
+/// A sealed trait for describing ANSI color args. This is largely only used to
+/// implement [`WriteColor`] and to provide lower level tools to access code codes and color arguments.
 ///
-/// This is a common trait for all single-color types specified by this crate.
+/// This is a common trait for all single-color types specified by this crate,
+/// and [`AnsiColor`](ansi::AnsiColor), [`XtermColor`](xterm::XtermColor), [`CssColor`](css::CssColor).
+///
+/// Note: [`rgb::RgbColor`] and [`Color`] don't implement this trait. Instead it implements `WriteColor` directly.
 pub trait ColorSpec: seal::Seal {
     /// The runtime version of the color
-    type Dynamic;
+    ///
+    /// For all single-color types specified by this crate, this is the corresponding `*Color` type.
+    /// For [`AnsiColor`](ansi::AnsiColor), [`XtermColor`](xterm::XtermColor), [`CssColor`](css::CssColor), it is themselves
+    type Dynamic: WriteColor;
 
     /// The color kind of this Color
     ///
@@ -112,22 +119,22 @@ pub trait ColorSpec: seal::Seal {
     /// Convert to the runtime version of the color
     fn into_dynamic(self) -> Self::Dynamic;
 
-    /// The foreground color arguments
+    /// The foreground color arguments only, excluding the leading `\x1b[` prefix
     fn foreground_args(self) -> &'static str;
 
-    /// The background color arguments
+    /// The background color arguments only, excluding the leading `\x1b[` prefix
     fn background_args(self) -> &'static str;
 
-    /// The underline color arguments
+    /// The underline color arguments only, excluding the leading `\x1b[` prefix
     fn underline_args(self) -> &'static str;
 
-    /// The foreground color sequence
+    /// The foreground color sequence, including the leading `\x1b[` prefix
     fn foreground_escape(self) -> &'static str;
 
-    /// The background color sequence
+    /// The background color sequence, including the leading `\x1b[` prefix
     fn background_escape(self) -> &'static str;
 
-    /// The underline color sequence
+    /// The underline color sequence, including the leading `\x1b[58;` prefix
     fn underline_escape(self) -> &'static str;
 }
 
@@ -316,7 +323,7 @@ pub enum Kind {
     NeverSome,
 }
 
-/// An optional color type
+/// An optional color type. This is used to abstract over [`WriteColor`] and `Option<W>` where `W: WriteColor`
 pub trait OptionalColor: seal::Seal {
     /// The color type
     type Color: WriteColor;
@@ -371,7 +378,7 @@ impl OptionalColor for NoColor {
     }
 }
 
-/// A compile time color value
+/// A compile time color value, only implemented by single-color types
 pub trait ComptimeColor: seal::Seal {
     /// The corresponding [`Color`] value
     const VALUE: Option<Color>;

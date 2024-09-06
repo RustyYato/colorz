@@ -11,7 +11,9 @@ use crate::Color;
 
 macro_rules! Css {
     ($($name:ident ($r:literal, $g:literal, $b:literal))*) => {
-        /// A runtime Css color type
+        /// A runtime Css color type. Not as widely supported as standard ANSI as it relies on 48-bit color support.
+        ///
+        /// This type can be converted to an [`RgbColor`](crate::rgb::RgbColor)
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum CssColor {
             $(
@@ -44,6 +46,13 @@ macro_rules! Css {
             #[inline(always)]
             fn from(color: CssColor) -> Self {
                 Some(crate::Color::Css(color))
+            }
+        }
+
+        impl From<CssColor> for crate::rgb::RgbColor {
+            #[inline(always)]
+            fn from(color: CssColor) -> Self {
+                color.rgb()
             }
         }
 
@@ -81,6 +90,16 @@ macro_rules! Css {
                 match self {
                     $(Self::$name => $name::ARGS,)*
                 }
+            }
+
+            /// The equivalent rgb color
+            #[inline]
+            pub const fn rgb(self) -> crate::rgb::RgbColor {
+                const RGB: &[crate::rgb::RgbColor; 147] = &[
+                    $(crate::rgb::RgbColor { red: $r, green: $g, blue: $b },)*
+                ];
+
+                RGB[self as usize]
             }
 
             /// The ANSI foreground color arguments
