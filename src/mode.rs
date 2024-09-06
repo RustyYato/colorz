@@ -321,8 +321,23 @@ pub fn get_default_stream() -> Stream {
     Stream::decode(DEFAULT_STREAM.load(core::sync::atomic::Ordering::Acquire))
 }
 
+/// Should the given stream and color kinds be colored based on the coloring mode.
+///
+/// The strategy used depends on what features are enabled,
+/// see `Coloring Mode` in the crate docs for details
+///
+/// for example, you can use this to decide if you need to color based on ANSI
+///
+/// ```rust
+/// fn write_color(f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+///     if colorz::mode::should_color(None, &[colorz::mode::ColorKind::Ansi]) {
+///         colorz::Ansi::Red.fmt_foreground(f)?;
+///     }
+///     Ok(())
+/// }
+/// ```
 #[inline]
-pub(crate) fn should_color(stream: Option<Stream>, kinds: &[ColorKind]) -> bool {
+pub fn should_color(stream: Option<Stream>, kinds: &[ColorKind]) -> bool {
     if cfg!(feature = "strip-colors") {
         return false;
     }
