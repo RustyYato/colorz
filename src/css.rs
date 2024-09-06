@@ -16,7 +16,7 @@ macro_rules! Css {
         pub enum CssColor {
             $(
                 #[doc = concat!("The runtime version of [`", stringify!($name), "`](self::", stringify!($name), ")")]
-                #[doc = concat!(" repesenting the rgb color value (", stringify!($r), ", ", stringify!($g), ",", stringify!($b), ")")]
+                #[doc = concat!(" representing the rgb color value (", stringify!($r), ", ", stringify!($g), ",", stringify!($b), ")")]
                 $name,
             )*
         }
@@ -25,7 +25,7 @@ macro_rules! Css {
 
         $(
             /// A compile time css color type
-            #[doc = concat!(" repesenting the rgb color value (", stringify!($r), ", ", stringify!($g), ",", stringify!($b), ")")]
+            #[doc = concat!(" representing the rgb color value (", stringify!($r), ", ", stringify!($g), ",", stringify!($b), ")")]
             ///
             /// You can convert this type to [`CssColor`] via [`From`] or [`Self::DYNAMIC`]
             /// and to [`Color`] or [`Option<Color>`] via [`From`]
@@ -188,9 +188,9 @@ macro_rules! Css {
 
         $(
             impl $name {
-                /// The corrosponding variant of [`CssColor`]
+                /// The corresponding variant of [`CssColor`]
                 pub const DYNAMIC: CssColor = CssColor::$name;
-                /// The corrosponding value of [`CssColor`]
+                /// The corresponding value of [`CssColor`]
                 pub const RGB: Rgb<$r, $g, $b> = Rgb;
 
                 /// The ANSI color args

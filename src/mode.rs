@@ -8,7 +8,7 @@
 //! higher precedence options forces coloring or no-coloring even if lower precedence options
 //! specify otherwise.
 //!
-//! For example, using [`StyledValue::stream`] to [`Stream::AlwaysColor`] doesn't gurantee
+//! For example, using [`StyledValue::stream`] to [`Stream::AlwaysColor`] doesn't guarantee
 //! that any coloring will happen. For example, if the `strip-colors` feature flag is set
 //! or if `set(Mode::Never)` was called before.
 //!

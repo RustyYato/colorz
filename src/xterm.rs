@@ -18,7 +18,7 @@ macro_rules! XTerm {
         pub enum XtermColor {
             $(
                 #[doc = concat!("The runtime version of [`", stringify!($name), "`](self::", stringify!($name), ")")]
-                #[doc = concat!(" repesenting the XTerm args ", stringify!($args))]
+                #[doc = concat!(" representing the XTerm args ", stringify!($args))]
                 $name,
             )*
         }
@@ -31,7 +31,7 @@ macro_rules! XTerm {
 
         $(
             /// A compile time Xterm color type
-            #[doc = concat!(" repesenting the color args ", stringify!($args))]
+            #[doc = concat!(" representing the color args ", stringify!($args))]
             ///
             /// You can convert this type to [`XtermColor`] via [`From`] or [`Self::DYNAMIC`]
             /// and to [`Color`] or [`Option<Color>`] via [`From`]
@@ -219,7 +219,7 @@ macro_rules! XTerm {
 
         $(
             impl $name {
-                /// The corrosponding variant on [`XtermColor`]
+                /// The corresponding variant on [`XtermColor`]
                 pub const DYNAMIC: XtermColor = XtermColor::$name;
 
                 /// The ANSI color args

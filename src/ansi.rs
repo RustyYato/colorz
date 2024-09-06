@@ -13,7 +13,7 @@ macro_rules! MkAnsiColor {
         pub enum AnsiColor {
             $(
                 #[doc = concat!("The runtime version of [`", stringify!($name), "`](struct@self::", stringify!($name), ")")]
-                #[doc = concat!(" repesenting the color args ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
+                #[doc = concat!(" representing the color args ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
                 $name,
             )*
         }
@@ -22,7 +22,7 @@ macro_rules! MkAnsiColor {
 
         $(
             /// A compile time ANSI color type
-            #[doc = concat!(" repesenting the color args ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
+            #[doc = concat!(" representing the color args ", stringify!($fg), " on the foreground and ", stringify!($bg), " on the background")]
             ///
             /// You can convert this type to [`AnsiColor`] via [`From`] or [`Self::DYNAMIC`]
             /// and to [`Color`] or [`Option<Color>`] via [`From`]
@@ -117,7 +117,7 @@ macro_rules! MkAnsiColor {
             }
 
             #[inline]
-            /// The corropsonding Xterm color
+            /// The corresponding Xterm color
             pub const fn to_xterm(self) -> crate::xterm::XtermColor {
                 match self {
                     $(Self::$name => $name::DYNAMIC_XTERM,)*
@@ -176,11 +176,11 @@ macro_rules! MkAnsiColor {
 
         $(
             impl $name {
-                /// The corrosponding variant on [`AnsiColor`]
+                /// The corresponding variant on [`AnsiColor`]
                 pub const DYNAMIC: AnsiColor = AnsiColor::$name;
-                /// The corrosponding [Xterm](crate::xterm) color
+                /// The corresponding [Xterm](crate::xterm) color
                 pub const XTERM: xterm_from_code!($xterm) = xterm_from_code!($xterm);
-                /// The corrosponding [`XtermColor`](crate::xterm::XtermColor) color
+                /// The corresponding [`XtermColor`](crate::xterm::XtermColor) color
                 pub const DYNAMIC_XTERM: crate::xterm::XtermColor = crate::xterm::XtermColor::from_code($xterm);
 
                 /// The ANSI foreground color arguments

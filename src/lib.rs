@@ -32,7 +32,7 @@ pub use from_str::ParseColorError;
 
 /// A styled value, created from [`Colorize`] or [`StyledValue::new`]
 ///
-/// This respresents a value with a style applied to it, and an associated stream
+/// This represents a value with a style applied to it, and an associated stream
 /// that this value will be written to.
 ///
 /// ```rust
@@ -69,14 +69,17 @@ pub struct NoColor;
 /// * `#rrggbb` - where each `r`, `g`, or `b` is a hex character. This will parse to `Color::Rgb`,
 /// * [0-9]{1,3} will parse to a `Color::Xterm` color code. Only supports values in the range 0..=255
 /// * `#xx` or `#x` - where each `x` is a hex character. This will parse to `Color::Xterm` color code,
-/// * the name of any ANSI color code case insensitive,  i.e. `red` or `BRIGHT BLUE` will parse to `Color::Ansi`
+/// * the name of any ANSI color code case sensitive,  i.e. `red` or `bright blue` will parse to `Color::Ansi`
 ///
 /// There isn't a way to parse to a `CssColor` at this time.
 ///
 /// ```
-/// use colorz::{Color, xterm};
+/// use colorz::{Color, xterm, ansi, rgb};
 ///
 /// assert_eq!("#ff".parse::<Color>(), Ok(Color::Xterm(xterm::XtermColor::from_code(0xff))));
+/// assert_eq!("red".parse::<Color>(), Ok(Color::Ansi(ansi::AnsiColor::Red)));
+/// assert_eq!("bright blue".parse::<Color>(), Ok(Color::Ansi(ansi::AnsiColor::BrightBlue)));
+/// assert_eq!("#abcdef".parse::<Color>(), Ok(Color::Rgb(rgb::RgbColor { red: 0xab, green: 0xcd, blue: 0xef })));
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color {
@@ -95,6 +98,8 @@ mod seal {
 }
 
 /// A sealed trait for describing ANSI color args
+///
+/// This is a common trait for all single-color types specified by this crate.
 pub trait ColorSpec: seal::Seal {
     /// The runtime version of the color
     type Dynamic;
@@ -104,7 +109,7 @@ pub trait ColorSpec: seal::Seal {
     /// used to detect wether to color on a given terminal
     const KIND: mode::ColorKind;
 
-    /// Covnert to the runtime version of the color
+    /// Convert to the runtime version of the color
     fn into_dynamic(self) -> Self::Dynamic;
 
     /// The foreground color arguments
@@ -368,7 +373,7 @@ impl OptionalColor for NoColor {
 
 /// A compile time color value
 pub trait ComptimeColor: seal::Seal {
-    /// The corrosponding [`Color`] value
+    /// The corresponding [`Color`] value
     const VALUE: Option<Color>;
 }
 

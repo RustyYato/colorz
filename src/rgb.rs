@@ -35,7 +35,7 @@ enum Layer {
 impl RgbBuffer {
     const fn new() -> Self {
         RgbBuffer {
-            // using `;` so we don't need to write the seperator each time
+            // using `;` so we don't need to write the separator each time
             // which saves a little bit of time
             data: [b';'; 19],
             len: 0,
@@ -59,7 +59,7 @@ impl RgbBuffer {
     }
 
     fn write_sep(&mut self) {
-        // seperators are set when RgbBuffer is initialized, so we don't need to write anything
+        // separators are set when RgbBuffer is initialized, so we don't need to write anything
         // and RgbBuffers are not reused, so `self.data[self.len]` must equal `;`
         debug_assert_eq!(self.data[self.len as usize], b';');
         self.len += 1;
@@ -287,7 +287,7 @@ const fn const_rgb_buffer(first: u8, r: u8, g: u8, b: u8) -> RgbBuffer {
 pub struct Rgb<const RED: u8, const GREEN: u8, const BLUE: u8>;
 
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> Rgb<RED, GREEN, BLUE> {
-    /// The corrosponding value of [`RgbColor`]
+    /// The corresponding value of [`RgbColor`]
     pub const DYNAMIC: RgbColor = RgbColor {
         red: RED,
         green: GREEN,
