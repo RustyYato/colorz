@@ -72,6 +72,12 @@ pub struct NoColor;
 /// * the name of any ANSI color code case insensitive,  i.e. `red` or `BRIGHT BLUE` will parse to `Color::Ansi`
 ///
 /// There isn't a way to parse to a `CssColor` at this time.
+///
+/// ```
+/// use colorz::{Color, xterm};
+///
+/// assert_eq!("#ff".parse::<Color>(), Ok(Color::Xterm(xterm::XtermColor::from_code(0xff))));
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color {
     /// The ANSI color type (see [`ansi`] for details)

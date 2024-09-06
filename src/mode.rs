@@ -317,7 +317,7 @@ pub fn get_coloring_mode() -> Mode {
 /// by the user and the global coloring mode is [`Mode::Detect`].
 ///
 /// ```rust
-/// set_default_stream(Stream::NeverColor);
+/// colorz::mode::set_default_stream(colorz::mode::Stream::NeverColor);
 /// ```
 #[inline]
 pub fn set_default_stream(stream: Stream) {
@@ -342,8 +342,10 @@ pub fn get_default_stream() -> Stream {
 ///
 /// ```rust
 /// fn write_color(f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+///     use colorz::WriteColor;
+///
 ///     if colorz::mode::should_color(None, &[colorz::mode::ColorKind::Ansi]) {
-///         colorz::Ansi::Red.fmt_foreground(f)?;
+///         colorz::ansi::Red.fmt_foreground(f)?;
 ///     }
 ///     Ok(())
 /// }

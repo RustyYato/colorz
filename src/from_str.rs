@@ -1,7 +1,8 @@
 use core::str::FromStr;
 
 use crate::{ansi::AnsiColor, Color};
-#[derive(Debug, Clone, Copy)]
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// An error type for parsing colors
 pub enum ParseColorError {
     /// An invalid hex digit was detected
