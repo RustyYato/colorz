@@ -72,16 +72,16 @@ There are many ways to specify the coloring mode for `colorz`, and it may not be
 they interact, so here is a precedence list. To figure out how colorz chooses to colorz, go
 down the list, and the first element that applies will be selected.
 
-* if the feature flag `strip-colors` is enabled -> NO COLORING
+* if the feature flag `strip-colors` is enabled -> NO COLOR
 * if the global coloring mode is `Mode::Always` -> DO COLOR
-* if the global coloring mode is `Mode::NEVER`  -> NO COLORING
+* if the global coloring mode is `Mode::NEVER`  -> NO COLOR
 * if the per-value stream if set to
     * `Stream::AlwaysColor` -> DO COLOR
-    * `Stream::NeverColor` -> NO COLORING
+    * `Stream::NeverColor` -> NO COLOR
     * `Stream::Stdout`/`Stream::Stderr` -> detect coloring using `std` or `support-color` (see docs on feature flags for details)
 * if global stream is set to
     * `Stream::AlwaysColor` -> DO COLOR
-    * `Stream::NeverColor` -> NO COLORING
+    * `Stream::NeverColor` -> NO COLOR
     * `Stream::Stdout`/`Stream::Stderr` -> detect coloring using `std` or `support-color` (see docs on feature flags for details)
 
 The global stream is always set to one of the possible `Stream` values,
@@ -92,7 +92,7 @@ so either the second or third option on the list.
 
 NOTE that the coloring mode only affects `StyledValue` (which includes all outputs of the `Colorize` trait).
 Using `Style::apply`/`Style::clear` directly will not respect the coloring mode, and can be used to force
-coloring regardless of the current coloring mode. You can use `Style::should_color` to detect if a given style
+coloring regardless of the current coloring mode. You can use `Style::should_color` or `mode::should_color` to detect if a given style
 should be used based on the current coloring mode.
 
 ```rust

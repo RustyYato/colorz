@@ -297,6 +297,11 @@ pub fn set_coloring_mode_from_env() {
 }
 
 /// Get the global coloring mode
+///
+/// This can be set from [`set_coloring_mode`], [`set_coloring_mode_from_env`]
+/// or the feature flag `strip-colors`
+///
+/// If it is not set, this returns a value of `Mode::Detect`
 #[inline]
 pub fn get_coloring_mode() -> Mode {
     if cfg!(feature = "strip-colors") {
@@ -306,7 +311,14 @@ pub fn get_coloring_mode() -> Mode {
     Mode::decode(COLORING_MODE.load(core::sync::atomic::Ordering::Acquire))
 }
 
-/// Set the default stream if one isn't chosen per value
+/// Set the default, stream to be used as a last resort
+///
+/// for example, you may use [`Stream::NeverColor`] to disable coloring if a stream is not specified
+/// by the user and the global coloring mode is [`Mode::Detect`].
+///
+/// ```rust
+/// set_default_stream(Stream::NeverColor);
+/// ```
 #[inline]
 pub fn set_default_stream(stream: Stream) {
     DEFAULT_STREAM.store(
@@ -316,15 +328,15 @@ pub fn set_default_stream(stream: Stream) {
 }
 
 /// Get the default stream
+///
+/// if one was not set by [`set_default_stream`], then this returns [`Stream::AlwaysColor`]. Otherwise return
+/// the value specified in [`set_default_stream`]
 #[inline]
 pub fn get_default_stream() -> Stream {
     Stream::decode(DEFAULT_STREAM.load(core::sync::atomic::Ordering::Acquire))
 }
 
 /// Should the given stream and color kinds be colored based on the coloring mode.
-///
-/// The strategy used depends on what features are enabled,
-/// see `Coloring Mode` in the crate docs for details
 ///
 /// for example, you can use this to decide if you need to color based on ANSI
 ///
@@ -334,6 +346,54 @@ pub fn get_default_stream() -> Stream {
 ///         colorz::Ansi::Red.fmt_foreground(f)?;
 ///     }
 ///     Ok(())
+/// }
+/// ```
+///
+/// The `stream` provided may be used to detect whether it supports coloring.
+/// For example, if the `std` feature is enabled, but not the `supports-colors` feature
+/// then using `Stream::StdErr` will check if `stderr` is a terminal and allow coloring
+/// if it is a terminal.
+///
+/// # Coloring Mode
+///
+/// There are many ways to specify the coloring mode for `colorz`, and it may not be obvious how
+/// they interact, so here is a precedence list. To figure out how colorz chooses to colorz, go
+/// down the list, and the first element that applies will be selected.
+///
+/// * if the feature flag `strip-colors` is enabled -> NO COLOR
+/// * if the global coloring mode is `Mode::Always` -> DO COLOR
+/// * if the global coloring mode is `Mode::NEVER`  -> NO COLOR
+/// * if the per-value stream if set to
+///     * `Stream::AlwaysColor` -> DO COLOR
+///     * `Stream::NeverColor` -> NO COLOR
+///     * `Stream::Stdout`/`Stream::Stderr` -> detect coloring using `std` or `support-color` (see docs on feature flags for details)
+/// * if global stream is set to
+///     * `Stream::AlwaysColor` -> DO COLOR
+///     * `Stream::NeverColor` -> NO COLOR
+///     * `Stream::Stdout`/`Stream::Stderr` -> detect coloring using `std` or `support-color` (see docs on feature flags for details)
+///
+/// The global stream is always set to one of the possible `Stream` values,
+/// so one option on the list will always be chosen.
+///
+/// NOTE that setting the coloring mode from the environment sets the global coloring mode,
+/// so either the second or third option on the list.
+///
+/// NOTE that the coloring mode only affects `StyledValue` (which includes all outputs of the `Colorize` trait).
+/// Using `Style::apply`/`Style::clear` directly will not respect the coloring mode, and can be used to force
+/// coloring regardless of the current coloring mode. You can use `Style::should_color` or `mode::should_color` to detect if a given style
+/// should be used based on the current coloring mode.
+///
+/// ```rust
+/// use colorz::{Style, xterm, mode::Stream};
+///
+/// let style = Style::new().fg(xterm::Aquamarine);
+///
+/// if style.should_color(Stream::AlwaysColor) {
+///     println!("{}style if global is set{}", style.apply(), style.clear());
+/// }
+///
+/// if style.should_color(None) {
+///     println!("{}style if global is set or default stream is set{}", style.apply(), style.clear());
 /// }
 /// ```
 #[inline]

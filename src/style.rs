@@ -300,6 +300,32 @@ impl Style<crate::NoColor, crate::NoColor, crate::NoColor> {
     }
 }
 
+impl<F: Into<Option<Color>>, B: Into<Option<Color>>, U: Into<Option<Color>>> Style<F, B, U> {
+    /// Convert to a type-erased style
+    #[inline]
+    pub fn into_runtime_style(self) -> Style {
+        Style {
+            foreground: self.foreground.into(),
+            background: self.background.into(),
+            underline_color: self.underline_color.into(),
+            effects: self.effects,
+        }
+    }
+}
+
+impl<F: ComptimeColor, B: ComptimeColor, U: ComptimeColor> Style<F, B, U> {
+    /// Convert to a type-erased style
+    #[inline]
+    pub const fn const_into_runtime_style(self) -> Style {
+        Style {
+            foreground: F::VALUE,
+            background: B::VALUE,
+            underline_color: U::VALUE,
+            effects: self.effects,
+        }
+    }
+}
+
 impl Default for Style<crate::NoColor, crate::NoColor, crate::NoColor> {
     #[inline]
     fn default() -> Self {
@@ -412,32 +438,6 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
         Style {
             effects: self.effects.toggled(opt),
             ..self
-        }
-    }
-}
-
-impl<F: Into<Option<Color>>, B: Into<Option<Color>>, U: Into<Option<Color>>> Style<F, B, U> {
-    /// Convert to a type-erased style
-    #[inline]
-    pub fn into_runtime_style(self) -> Style {
-        Style {
-            foreground: self.foreground.into(),
-            background: self.background.into(),
-            underline_color: self.underline_color.into(),
-            effects: self.effects,
-        }
-    }
-}
-
-impl<F: ComptimeColor, B: ComptimeColor, U: ComptimeColor> Style<F, B, U> {
-    /// Convert to a type-erased style
-    #[inline]
-    pub const fn const_into_runtime_style(self) -> Style {
-        Style {
-            foreground: F::VALUE,
-            background: B::VALUE,
-            underline_color: U::VALUE,
-            effects: self.effects,
         }
     }
 }
@@ -594,6 +594,9 @@ impl<F: OptionalColor, B: OptionalColor, U: OptionalColor> Style<F, B, U> {
                 if self.effects.data.is_power_of_two() {
                     let effect = self.effects.iter().next().unwrap();
                     return f.write_str(effect.apply_escape());
+                } else if self.effects.is_plain() {
+                    // empty style
+                    return Ok(());
                 }
             }
             (crate::Kind::AlwaysSome, crate::Kind::AlwaysSome) => {

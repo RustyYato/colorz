@@ -1,12 +1,15 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
+#![feature(rustdoc_missing_doc_code_examples)]
 #![forbid(unsafe_code, missing_docs, clippy::missing_panics_doc)]
 #![deny(
     missing_debug_implementations,
     missing_copy_implementations,
     clippy::missing_const_for_fn,
-    clippy::missing_inline_in_public_items
+    clippy::missing_inline_in_public_items,
+    // rustdoc::missing_doc_code_examples
 )]
+#![warn(rustdoc::missing_doc_code_examples)]
 #![cfg_attr(doc, feature(doc_cfg))]
 
 #[cfg(feature = "alloc")]
@@ -28,6 +31,16 @@ mod value;
 pub use from_str::ParseColorError;
 
 /// A styled value, created from [`Colorize`] or [`StyledValue::new`]
+///
+/// This respresents a value with a style applied to it, and an associated stream
+/// that this value will be written to.
+///
+/// ```rust
+/// use colorz::{Colorize, StyledValue, ansi};
+///
+/// let hello: StyledValue<_, ansi::Blue> = "Hello ".blue();
+/// println!("{hello} world");
+/// ```
 #[non_exhaustive]
 #[derive(Clone, Copy)]
 pub struct StyledValue<T, F = NoColor, B = NoColor, U = NoColor> {
@@ -45,10 +58,20 @@ pub use value::Colorize;
 pub use style::{Effect, EffectFlags, EffectFlagsIter, Style};
 
 /// A no color placeholder type
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NoColor;
 
 /// A runtime color args
+///
+/// # FromStr
+///
+/// you can parse a color from a string, here are the supported formats
+/// * `#rrggbb` - where each `r`, `g`, or `b` is a hex character. This will parse to `Color::Rgb`,
+/// * [0-9]{1,3} will parse to a `Color::Xterm` color code. Only supports values in the range 0..=255
+/// * `#xx` or `#x` - where each `x` is a hex character. This will parse to `Color::Xterm` color code,
+/// * the name of any ANSI color code case insensitive,  i.e. `red` or `BRIGHT BLUE` will parse to `Color::Ansi`
+///
+/// There isn't a way to parse to a `CssColor` at this time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Color {
     /// The ANSI color type (see [`ansi`] for details)
@@ -135,10 +158,13 @@ impl<C: ColorSpec> WriteColor for C {
 }
 
 /// A sealed trait for describing how to write ANSI color args
+///
+/// if you are using this trait directly, then you should use
+/// [`mode::should_color`] to allow users to disable coloring
 pub trait WriteColor: seal::Seal {
     /// The color kind of this Color
     ///
-    /// used to detect wether to color on a given terminal
+    /// used to detect wether to color is available on a given terminal if the `supports-color` feature is enabled
     fn color_kind(self) -> mode::ColorKind;
 
     /// write the foreground color arguments
@@ -290,7 +316,9 @@ pub trait OptionalColor: seal::Seal {
     /// Get the color value
     fn get(self) -> Option<Self::Color>;
 
-    /// Get the color value
+    /// Get the [color kind](mode::ColorKind), this is used to check if
+    /// formatting this color is supported on the current terminal when
+    /// the `supports-color` feature is enabled
     #[inline]
     fn color_kind(self) -> mode::ColorKind {
         self.get()

@@ -51,7 +51,7 @@ impl FromStr for Color {
             &[a @ b'0'..=b'1', b @ b'0'..=b'9', c @ b'0'..=b'9']
             | &[a @ b'2', b @ b'0'..=b'4', c @ b'0'..=b'9']
             | &[a @ b'2', b @ b'5', c @ b'0'..=b'5'] => {
-                Self::Xterm(((a - b'0') * 100 + b * 10 + c).into())
+                Self::Xterm(((a - b'0') * 100 + (b - b'0') * 10 + (c - b'0')).into())
             }
             &[b'0'..=b'9', b'0'..=b'9', b'0'..=b'9'] => return Err(ParseColorError::U8Overflow),
             &[b'#', a] => Self::Xterm(parse_hex_digit(a)?.into()),

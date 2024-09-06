@@ -20,8 +20,22 @@ macro_rules! AnsiColorMethods {
         ($(#[$doc:meta] $effect:ident $effect_fun:ident $into_effect_fun:ident)*)
     ) => {
         /// An extension trait for all values which adds convenience formatting functions
+        ///
+        /// ```rust
+        /// use colorz::{Colorize, StyledValue, ansi};
+        ///
+        /// let hello: StyledValue<_, ansi::Blue> = "Hello ".blue(); // `blue` is from `Colorize`
+        /// println!("{hello} world");
+        /// ```
         pub trait Colorize {
-            /// Convert a value to a `StyledValue`
+            /// Convert a value to a `StyledValue` with no styling yet
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, StyledValue};
+            ///
+            /// let hello: StyledValue<_> = "Hello ".into_style();
+            /// assert!(hello.style.is_plain());
+            /// ```
             #[inline]
             fn into_style(self) -> StyledValue<Self>
             where
@@ -34,7 +48,16 @@ macro_rules! AnsiColorMethods {
                 }
             }
 
-            /// Convert a value to a `StyledValue`
+            /// Convert a value to a `StyledValue` with no styling yet
+            ///
+            /// This borrows the source value, so it cannot outlive the source
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, StyledValue};
+            ///
+            /// let hello: StyledValue<_> = "Hello ".style();
+            /// assert!(hello.style.is_plain());
+            /// ```
             #[inline]
             fn style(&self) -> StyledValue<&Self> {
                 StyledValue {
@@ -45,6 +68,16 @@ macro_rules! AnsiColorMethods {
             }
 
             /// Convert a value to a `StyledValue` and applies the given style
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, StyledValue};
+            ///
+            /// # fn get_style() -> colorz::Style { colorz::Style::new().into_runtime_style() }
+            ///
+            /// let style = get_style();
+            /// let hello = "Hello ".into_style_with(style);
+            /// assert_eq!(hello.style, style);
+            /// ```
             #[inline]
             fn into_style_with<F, B, U>(self, style: Style<F, B, U>) -> StyledValue<Self, F, B, U>
             where
@@ -58,6 +91,17 @@ macro_rules! AnsiColorMethods {
             }
 
             /// Convert a value to a `StyledValue` and applies the given style
+            ///
+            /// This borrows the source value, so it cannot outlive the source
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, StyledValue};
+            ///
+            /// # fn get_style() -> colorz::Style { colorz::Style::new().into_runtime_style() }
+            ///
+            /// let style = get_style();
+            /// let hello = "Hello ".style_with(style);
+            /// assert_eq!(hello.style, style);
             #[inline]
             fn style_with<F, B, U>(&self, style: Style<F, B, U>) -> StyledValue<&Self, F, B, U> {
                 StyledValue {
@@ -68,36 +112,102 @@ macro_rules! AnsiColorMethods {
             }
 
             /// Changes the foreground color
+            ///
+            /// This borrows the source value, so it cannot outlive the source
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, ansi};
+            ///
+            /// println!("{}",  "Hello ".fg(ansi::Red));
+            /// ```
+            ///
+            /// prints:
+            ///
+            /// <span style="color:red">Hello</span>
             #[inline]
             fn fg<C>(&self, color: C) -> StyledValue<&Self, C> {
                 self.style().fg(color)
             }
 
             /// Changes the foreground color
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, ansi};
+            ///
+            /// println!("{}",  "Hello ".fg(ansi::Red));
+            /// ```
+            ///
+            /// prints:
+            ///
+            /// <span style="color:red">Hello</span>
             #[inline]
             fn into_fg<C>(self, color: C) -> StyledValue<Self, C> where Self: Sized {
                 self.into_style().fg(color)
             }
 
             /// Changes the background color
+            ///
+            /// This borrows the source value, so it cannot outlive the source
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, ansi};
+            ///
+            /// println!("{}",  "Hello ".fg(ansi::Red));
+            /// ```
+            ///
+            /// prints:
+            ///
+            /// <span style="background-color:red">Hello</span>
             #[inline]
             fn bg<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, C> {
                 self.style().bg(color)
             }
 
             /// Changes the background color
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, ansi};
+            ///
+            /// println!("{}",  "Hello ".fg(ansi::Red));
+            /// ```
+            ///
+            /// prints:
+            ///
+            /// <span style="background-color:red">Hello</span>
             #[inline]
             fn into_bg<C>(self, color: C) -> StyledValue<Self, crate::NoColor, C> where Self: Sized {
                 self.into_style().bg(color)
             }
 
             /// Changes the underline color
+            ///
+            /// This borrows the source value, so it cannot outlive the source
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, ansi};
+            ///
+            /// println!("{}",  "Hello ".fg(ansi::Red));
+            /// ```
+            ///
+            /// prints:
+            ///
+            /// <span style="text-decoration-color:red;text-decoration-line:underline">Hello</span>
             #[inline]
             fn underline_color<C>(&self, color: C) -> StyledValue<&Self, crate::NoColor, crate::NoColor, C> {
                 self.style().underline_color(color)
             }
 
             /// Changes the underline color
+            ///
+            /// ```rust
+            /// use colorz::{Colorize, ansi};
+            ///
+            /// println!("{}",  "Hello ".fg(ansi::Red));
+            /// ```
+            ///
+            /// prints:
+            ///
+            /// <span style="text-decoration-color:red;text-decoration-line:underline">Hello</span>
             #[inline]
             fn into_underline_color<C>(self, color: C) -> StyledValue<Self, crate::NoColor, crate::NoColor, C> where Self: Sized {
                 self.into_style().underline_color(color)
