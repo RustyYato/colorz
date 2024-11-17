@@ -79,7 +79,7 @@ impl RgbBuffer {
         self.len += 1;
     }
 
-    fn write_u8(&mut self, mut x: u8) {
+    fn write_u8(&mut self, x: u8) {
         // makes LLVM's peephole optimizer trigger, giving better codegen
         // this also lifts the bounds check to the top, and no other
         // bounds checks are done
@@ -89,17 +89,15 @@ impl RgbBuffer {
 
         if x >= 100 {
             data[len] = x / 100 + b'0';
-            x %= 100;
             len += 1;
         }
 
         if x >= 10 {
-            data[len] = x / 10 + b'0';
-            x %= 10;
+            data[len] = x % 100 / 10 + b'0';
             len += 1;
         }
 
-        data[len] = x + b'0';
+        data[len] = x % 10 + b'0';
         self.len += len as u8 + 1;
     }
 
@@ -112,7 +110,7 @@ impl RgbBuffer {
     const fn const_to_str(&self) -> &str {
         // I would like to use this, however it doesn't work in a const-context
         // to_str(&self.data[..self.len])
-        let data = self.data.split_at(self.len as usize).1;
+        let data = self.data.split_at(self.len as usize).0;
 
         // Thankfully `core::str::from_utf8` is a `const`-`fn`
         match core::str::from_utf8(data) {
@@ -409,4 +407,11 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> crate::ComptimeColor
     for Rgb<RED, GREEN, BLUE>
 {
     const VALUE: Option<crate::Color> = Some(crate::Color::Rgb(Self::DYNAMIC));
+}
+
+#[test]
+fn test_write_u8() {
+    let mut buffer = RgbBuffer::new();
+    buffer.write_args(205, 101, 200);
+    assert_eq!(buffer.to_str(), "205;101;200");
 }
