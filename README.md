@@ -25,7 +25,7 @@ Features:
 * zero-dependency by default
 * Standard names for Ansi, Xterm, and Css colors
 * Rgb color support
-* Ansi modifier (bold, italics, underline)
+* Ansi modifier (bold, italics, underline, etc.)
 * Multi-color support (foreground, background, and underline color)
 * mostly a drop-in replacement for `owo-colors` for simple cases
     * (some xterm color names may be different, some methods are called a little differently)
