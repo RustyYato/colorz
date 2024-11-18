@@ -1,16 +1,14 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
-#![feature(rustdoc_missing_doc_code_examples)]
 #![forbid(unsafe_code, missing_docs, clippy::missing_panics_doc)]
 #![deny(
     missing_debug_implementations,
     missing_copy_implementations,
     clippy::missing_const_for_fn,
-    clippy::missing_inline_in_public_items,
-    // rustdoc::missing_doc_code_examples
+    clippy::missing_inline_in_public_items
 )]
-#![warn(rustdoc::missing_doc_code_examples)]
-#![cfg_attr(doc, feature(doc_cfg))]
+#![cfg_attr(doc, warn(rustdoc::missing_doc_code_examples))]
+#![cfg_attr(doc, feature(doc_cfg, rustdoc_missing_doc_code_examples))]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
