@@ -2,6 +2,8 @@
 
 use crate::{ColorSpec, WriteColor};
 
+use crate::ascii;
+
 #[cfg(doc)]
 use crate::Color;
 
@@ -21,7 +23,16 @@ pub struct RgbColor {
 //      which can save quite a bit of time since, Formatter is a huge optimization barrier
 // * allows computing the color codes at compile time
 struct RgbBuffer {
-    data: [u8; 19],
+    data: [ascii::Char; 19],
+    len: u8,
+}
+
+// At stack only buffer which has two uses
+// *  allows optimizing the number of calls to core::fmt::Formatter::write_str
+//      which can save quite a bit of time since, Formatter is a huge optimization barrier
+// * allows computing the color codes at compile time
+struct RgbWriter<'a> {
+    data: &'a mut [ascii::Char],
     len: u8,
 }
 
@@ -32,90 +43,78 @@ enum Layer {
     Underline,
 }
 
-impl RgbBuffer {
-    const fn new() -> Self {
-        RgbBuffer {
-            // using `;` so we don't need to write the separator each time
-            // which saves a little bit of time
-            data: [b';'; 19],
+impl<'a> RgbWriter<'a> {
+    const fn new(buffer: &'a mut [ascii::Char; 19]) -> Self {
+        *buffer = [ascii::Char::Semicolon; 19];
+        RgbWriter {
+            data: buffer,
             len: 0,
         }
     }
 
+    #[allow(clippy::mem_replace_with_default)]
+    const fn chunk<const N: usize>(&mut self) -> &'a mut [ascii::Char; N] {
+        let (first, data) = core::mem::replace(&mut self.data, &mut [])
+            .split_first_chunk_mut::<N>()
+            .unwrap();
+        self.data = data;
+        self.len += N as u8;
+        first
+    }
+
     const fn write_escape_start(&mut self, layer: Layer) {
-        self.write(match layer {
-            Layer::Foreground => "\x1b[38;2;",
-            Layer::Background => "\x1b[48;2;",
-            Layer::Underline => "\x1b[58;2;",
-        })
+        assert!(self.data.len() == 19);
+
+        *self.chunk() = [ascii::Char::Escape, ascii::Char::LeftSquareBracket];
+        self.write_args_header(layer);
     }
 
     const fn write_args_header(&mut self, layer: Layer) {
-        self.write(match layer {
-            Layer::Foreground => "38;2;",
-            Layer::Background => "48;2;",
-            Layer::Underline => "58;2;",
-        })
+        *self.chunk() = [
+            ascii::Char::from_digit(layer as u8 + 3),
+            ascii::Char::Digit8,
+            ascii::Char::Semicolon,
+            ascii::Char::Digit2,
+        ];
+        self.write_sep();
     }
 
     const fn write_sep(&mut self) {
+        let val = self.chunk::<1>()[0];
         // separators are set when RgbBuffer is initialized, so we don't need to write anything
         // and RgbBuffers are not reused, so `self.data[self.len]` must equal `;`
-        debug_assert!(self.data[self.len as usize] == b';');
-        self.len += 1;
+        debug_assert!(val as u8 == b';');
     }
 
     const fn write_escape_end(&mut self) {
-        self.write_char(b'm')
+        *self.chunk() = [ascii::Char::SmallM];
     }
 
-    const fn write(&mut self, s: &str) {
-        let data = self.data.split_at_mut(self.len as usize).1;
-        let data = data.split_at_mut(s.len()).0;
-        data.copy_from_slice(s.as_bytes());
-        self.len += s.len() as u8;
-    }
-
-    const fn write_char(&mut self, x: u8) {
-        self.data[self.len as usize] = x;
-        self.len += 1;
-    }
-
+    #[inline]
     const fn write_u8(&mut self, x: u8) {
+        #[cold]
+        #[inline(never)]
+        const fn write_u8_failed() -> ! {
+            unreachable!()
+        }
+
         // makes LLVM's peephole optimizer trigger, giving better codegen
         // this also lifts the bounds check to the top, and no other
         // bounds checks are done
 
-        let mut len = 0;
-        let data = self
-            .data
-            .split_at_mut(self.len as usize)
-            .1
-            .first_chunk_mut::<3>()
-            .unwrap();
+        if self.data.len() <= 3 {
+            write_u8_failed()
+        }
 
         if x >= 100 {
-            data[len] = x / 100 + b'0';
-            len += 1;
+            *self.chunk() = [ascii::Char::from_digit(x / 100)];
         }
 
         if x >= 10 {
-            data[len] = x % 100 / 10 + b'0';
-            len += 1;
+            *self.chunk() = [ascii::Char::from_digit(x / 10 % 10)];
         }
 
-        data[len] = x % 10 + b'0';
-        self.len += len as u8 + 1;
-    }
-
-    #[inline]
-    const fn to_str(&self) -> &str {
-        debug_assert!(self.data.is_ascii());
-        let data = self.data.split_at(self.len as usize).0;
-        match core::str::from_utf8(data) {
-            Ok(x) => x,
-            Err(_) => unreachable!(),
-        }
+        *self.chunk() = [ascii::Char::from_digit(x % 10)];
     }
 
     // inline(always) gives a measurable perf boost
@@ -127,9 +126,31 @@ impl RgbBuffer {
         self.write_sep();
         self.write_u8(blue);
     }
+}
+
+impl RgbBuffer {
+    const fn new() -> Self {
+        RgbBuffer {
+            // using `;` so we don't need to write the separator each time
+            // which saves a little bit of time
+            data: [ascii::Char::Semicolon; 19],
+            len: 0,
+        }
+    }
+
+    #[inline]
+    const fn to_str(&self) -> &str {
+        self.to_str_with(self.len)
+    }
+
+    #[inline]
+    const fn to_str_with(&self, len: u8) -> &str {
+        let data = self.data.split_at(len as usize).0;
+        ascii::as_str(data)
+    }
 
     const fn raw_args_payload(&self) -> RgbBuffer {
-        let mut data = [0; 19];
+        let mut data = [ascii::Char::Semicolon; 19];
         let mut i = 0;
         while i < self.len as usize - 1 - 5 {
             data[i] = self.data[i + 5];
@@ -142,7 +163,7 @@ impl RgbBuffer {
     }
 
     const fn args_payload(&self) -> RgbBuffer {
-        let mut data = [0; 19];
+        let mut data = [ascii::Char::Semicolon; 19];
         let mut i = 0;
         while i < self.len as usize - 1 - 2 {
             data[i] = self.data[i + 2];
@@ -165,60 +186,75 @@ impl WriteColor for RgbColor {
     #[inline]
     fn fmt_foreground_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
-        buffer.write_args_header(Layer::Foreground);
-        buffer.write_args(self.red, self.green, self.blue);
-        f.write_str(buffer.to_str())
+        let mut writer = RgbWriter::new(&mut buffer.data);
+        writer.write_args_header(Layer::Foreground);
+        writer.write_args(self.red, self.green, self.blue);
+        let len = writer.len;
+        f.write_str(buffer.to_str_with(len))
     }
 
     #[inline]
     fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
-        buffer.write_args_header(Layer::Background);
-        buffer.write_args(self.red, self.green, self.blue);
-        f.write_str(buffer.to_str())
+        let mut writer = RgbWriter::new(&mut buffer.data);
+        writer.write_args_header(Layer::Background);
+        writer.write_args(self.red, self.green, self.blue);
+        let len = writer.len;
+        f.write_str(buffer.to_str_with(len))
     }
 
     #[inline]
     fn fmt_underline_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
-        buffer.write_args_header(Layer::Underline);
-        buffer.write_args(self.red, self.green, self.blue);
-        f.write_str(buffer.to_str())
+        let mut writer = RgbWriter::new(&mut buffer.data);
+        writer.write_args_header(Layer::Underline);
+        writer.write_args(self.red, self.green, self.blue);
+        let len = writer.len;
+        f.write_str(buffer.to_str_with(len))
     }
 
     #[inline]
     fn fmt_foreground(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
-        buffer.write_escape_start(Layer::Foreground);
-        buffer.write_args(self.red, self.green, self.blue);
-        buffer.write_escape_end();
-        f.write_str(buffer.to_str())
+        let mut writer = RgbWriter::new(&mut buffer.data);
+        writer.write_escape_start(Layer::Foreground);
+        writer.write_args(self.red, self.green, self.blue);
+        writer.write_escape_end();
+        let len = writer.len;
+        f.write_str(buffer.to_str_with(len))
     }
 
     #[inline]
     fn fmt_background(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
-        buffer.write_escape_start(Layer::Background);
-        buffer.write_args(self.red, self.green, self.blue);
-        buffer.write_escape_end();
-        f.write_str(buffer.to_str())
+        let mut writer = RgbWriter::new(&mut buffer.data);
+        writer.write_escape_start(Layer::Background);
+        writer.write_args(self.red, self.green, self.blue);
+        writer.write_escape_end();
+        let len = writer.len;
+        f.write_str(buffer.to_str_with(len))
     }
 
     #[inline]
     fn fmt_underline(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
-        buffer.write_escape_start(Layer::Underline);
-        buffer.write_args(self.red, self.green, self.blue);
-        buffer.write_escape_end();
-        f.write_str(buffer.to_str())
+        let mut writer = RgbWriter::new(&mut buffer.data);
+        writer.write_escape_start(Layer::Underline);
+        writer.write_args(self.red, self.green, self.blue);
+        writer.write_escape_end();
+        let len = writer.len;
+        f.write_str(buffer.to_str_with(len))
     }
 }
 
 const fn const_rgb_buffer(layer: Layer, r: u8, g: u8, b: u8) -> RgbBuffer {
     let mut buffer = RgbBuffer::new();
-    buffer.write_escape_start(layer);
-    buffer.write_args(r, g, b);
-    buffer.write_escape_end();
+    let mut writer = RgbWriter::new(&mut buffer.data);
+    writer.write_escape_start(layer);
+    writer.write_args(r, g, b);
+    writer.write_escape_end();
+    let len = writer.len;
+    buffer.len = len;
     buffer
 }
 
@@ -357,6 +393,14 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> crate::ComptimeColor
 #[test]
 fn test_write_u8() {
     let mut buffer = RgbBuffer::new();
-    buffer.write_args(205, 101, 200);
-    assert_eq!(buffer.to_str(), "205;101;200");
+    let mut writer = RgbWriter::new(&mut buffer.data);
+    writer.write_args(205, 101, 200);
+    let len = writer.len;
+    assert_eq!(buffer.to_str_with(len), "205;101;200");
+    let mut buffer = RgbBuffer::new();
+    let mut writer = RgbWriter::new(&mut buffer.data);
+    writer.write_escape_start(Layer::Foreground);
+    writer.write_args(0xff, 0xff, 0xff);
+    writer.write_escape_end();
+    assert_eq!(writer.len, 19);
 }

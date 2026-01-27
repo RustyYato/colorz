@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
-#![forbid(unsafe_code, missing_docs, clippy::missing_panics_doc)]
+#![deny(unsafe_code, missing_docs, clippy::missing_panics_doc)]
 #![deny(
     missing_debug_implementations,
     missing_copy_implementations,
@@ -14,6 +14,9 @@
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
+
+#[allow(unsafe_code)]
+mod ascii;
 
 #[macro_use]
 pub mod xterm;
