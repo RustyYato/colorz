@@ -37,10 +37,12 @@ impl Char {
 
 #[inline]
 pub const fn as_bytes(slice: &[Char]) -> &[u8] {
+    // SAFETY: Char is repr(u8) and fieldless, so it is trivially castable to bytes
     unsafe { core::slice::from_raw_parts(slice.as_ptr().cast(), slice.len()) }
 }
 
 #[inline]
 pub const fn as_str(slice: &[Char]) -> &str {
+    // SAFETY: Char's is represented by ascii bytes, and a slice of ascii bytes is always valid utf8
     unsafe { core::str::from_utf8_unchecked(as_bytes(slice)) }
 }

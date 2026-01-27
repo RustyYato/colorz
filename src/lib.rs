@@ -1,7 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
-#![deny(unsafe_code, missing_docs, clippy::missing_panics_doc)]
+#![forbid(missing_docs, clippy::missing_panics_doc)]
 #![deny(
+    unsafe_code,
     missing_debug_implementations,
     missing_copy_implementations,
     clippy::missing_const_for_fn,

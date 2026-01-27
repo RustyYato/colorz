@@ -27,10 +27,10 @@ struct RgbBuffer {
     len: u8,
 }
 
-// At stack only buffer which has two uses
-// *  allows optimizing the number of calls to core::fmt::Formatter::write_str
-//      which can save quite a bit of time since, Formatter is a huge optimization barrier
-// * allows computing the color codes at compile time
+// Use a slice here since it makes it simpler for LLVM to optimize out any panics
+// also keep a copy of the length, since again it makes it simpler for LLVM to optimize
+// By using this abstraction, we can ensure that LLVM knows that self.len + self.data.len() <= 19
+// throughout every `fmt_` function.
 struct RgbWriter<'a> {
     data: &'a mut [ascii::Char],
     len: u8,
@@ -193,7 +193,7 @@ impl WriteColor for RgbColor {
         f.write_str(buffer.to_str_with(len))
     }
 
-    #[inline]
+    #[inline(never)]
     fn fmt_background_args(self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut buffer = RgbBuffer::new();
         let mut writer = RgbWriter::new(&mut buffer.data);
