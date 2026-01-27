@@ -231,19 +231,19 @@ impl EffectFlags {
 
     /// Add an effect to the set in place
     #[inline(always)]
-    pub fn set(&mut self, opt: Effect) {
+    pub const fn set(&mut self, opt: Effect) {
         *self = self.with(opt)
     }
 
     /// Remove an effect from the set in place
     #[inline(always)]
-    pub fn unset(&mut self, opt: Effect) {
+    pub const fn unset(&mut self, opt: Effect) {
         *self = self.without(opt)
     }
 
     /// Toggle an effect in the set in place
     #[inline(always)]
-    pub fn toggle(&mut self, opt: Effect) {
+    pub const fn toggle(&mut self, opt: Effect) {
         *self = self.toggled(opt)
     }
 

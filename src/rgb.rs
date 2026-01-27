@@ -42,7 +42,7 @@ impl RgbBuffer {
         }
     }
 
-    fn write_escape_start(&mut self, layer: Layer) {
+    const fn write_escape_start(&mut self, layer: Layer) {
         self.write(match layer {
             Layer::Foreground => "\x1b[38;2;",
             Layer::Background => "\x1b[48;2;",
@@ -50,7 +50,7 @@ impl RgbBuffer {
         })
     }
 
-    fn write_args_header(&mut self, layer: Layer) {
+    const fn write_args_header(&mut self, layer: Layer) {
         self.write(match layer {
             Layer::Foreground => "38;2;",
             Layer::Background => "48;2;",
@@ -58,34 +58,41 @@ impl RgbBuffer {
         })
     }
 
-    fn write_sep(&mut self) {
+    const fn write_sep(&mut self) {
         // separators are set when RgbBuffer is initialized, so we don't need to write anything
         // and RgbBuffers are not reused, so `self.data[self.len]` must equal `;`
-        debug_assert_eq!(self.data[self.len as usize], b';');
+        debug_assert!(self.data[self.len as usize] == b';');
         self.len += 1;
     }
 
-    fn write_escape_end(&mut self) {
+    const fn write_escape_end(&mut self) {
         self.write_char(b'm')
     }
 
-    fn write(&mut self, s: &str) {
-        self.data[self.len as usize..][..s.len()].copy_from_slice(s.as_bytes());
+    const fn write(&mut self, s: &str) {
+        let data = self.data.split_at_mut(self.len as usize).1;
+        let data = data.split_at_mut(s.len()).0;
+        data.copy_from_slice(s.as_bytes());
         self.len += s.len() as u8;
     }
 
-    fn write_char(&mut self, x: u8) {
+    const fn write_char(&mut self, x: u8) {
         self.data[self.len as usize] = x;
         self.len += 1;
     }
 
-    fn write_u8(&mut self, x: u8) {
+    const fn write_u8(&mut self, x: u8) {
         // makes LLVM's peephole optimizer trigger, giving better codegen
         // this also lifts the bounds check to the top, and no other
         // bounds checks are done
 
         let mut len = 0;
-        let data = &mut self.data[self.len as usize..][..3];
+        let data = self
+            .data
+            .split_at_mut(self.len as usize)
+            .1
+            .first_chunk_mut::<3>()
+            .unwrap();
 
         if x >= 100 {
             data[len] = x / 100 + b'0';
@@ -102,17 +109,9 @@ impl RgbBuffer {
     }
 
     #[inline]
-    fn to_str(&self) -> &str {
+    const fn to_str(&self) -> &str {
         debug_assert!(self.data.is_ascii());
-        core::str::from_utf8(&self.data[..self.len as usize]).unwrap()
-    }
-
-    const fn const_to_str(&self) -> &str {
-        // I would like to use this, however it doesn't work in a const-context
-        // to_str(&self.data[..self.len])
         let data = self.data.split_at(self.len as usize).0;
-
-        // Thankfully `core::str::from_utf8` is a `const`-`fn`
         match core::str::from_utf8(data) {
             Ok(x) => x,
             Err(_) => unreachable!(),
@@ -121,7 +120,7 @@ impl RgbBuffer {
 
     // inline(always) gives a measurable perf boost
     #[inline(always)]
-    fn write_args(&mut self, red: u8, green: u8, blue: u8) {
+    const fn write_args(&mut self, red: u8, green: u8, blue: u8) {
         self.write_u8(red);
         self.write_sep();
         self.write_u8(green);
@@ -215,66 +214,12 @@ impl WriteColor for RgbColor {
     }
 }
 
-const fn const_rgb_buffer(first: u8, r: u8, g: u8, b: u8) -> RgbBuffer {
-    let mut len = 7;
-    let mut data = *b"\x1b[x8;2;rrr;ggg;bbbm";
-    data[2] = first;
-
-    const fn d(mut x: u8, mut n: u8) -> u8 {
-        while n != 0 {
-            x /= 10;
-            n -= 1;
-        }
-
-        x % 10 + b'0'
-    }
-
-    let x = r;
-    if x >= 100 {
-        data[len] = d(x, 2);
-        len += 1;
-    }
-    if x >= 10 {
-        data[len] = d(x, 1);
-        len += 1;
-    }
-    data[len] = d(x, 0);
-    len += 1;
-    data[len] = b';';
-    len += 1;
-
-    let x = g;
-    if x >= 100 {
-        data[len] = d(x, 2);
-        len += 1;
-    }
-    if x >= 10 {
-        data[len] = d(x, 1);
-        len += 1;
-    }
-    data[len] = d(x, 0);
-    len += 1;
-    data[len] = b';';
-    len += 1;
-
-    let x = b;
-    if x >= 100 {
-        data[len] = d(x, 2);
-        len += 1;
-    }
-    if x >= 10 {
-        data[len] = d(x, 1);
-        len += 1;
-    }
-    data[len] = d(x, 0);
-    len += 1;
-    data[len] = b'm';
-    len += 1;
-
-    RgbBuffer {
-        len: len as u8,
-        data,
-    }
+const fn const_rgb_buffer(layer: Layer, r: u8, g: u8, b: u8) -> RgbBuffer {
+    let mut buffer = RgbBuffer::new();
+    buffer.write_escape_start(layer);
+    buffer.write_args(r, g, b);
+    buffer.write_escape_end();
+    buffer
 }
 
 /// A compile time Rgb color type
@@ -292,9 +237,9 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> Rgb<RED, GREEN, BLUE> {
         blue: BLUE,
     };
 
-    const FOREGROUND_DATA: RgbBuffer = const_rgb_buffer(b'3', RED, GREEN, BLUE);
-    const BACKGROUND_DATA: RgbBuffer = const_rgb_buffer(b'4', RED, GREEN, BLUE);
-    const UNDERLINE_DATA: RgbBuffer = const_rgb_buffer(b'5', RED, GREEN, BLUE);
+    const FOREGROUND_DATA: RgbBuffer = const_rgb_buffer(Layer::Foreground, RED, GREEN, BLUE);
+    const BACKGROUND_DATA: RgbBuffer = const_rgb_buffer(Layer::Background, RED, GREEN, BLUE);
+    const UNDERLINE_DATA: RgbBuffer = const_rgb_buffer(Layer::Underline, RED, GREEN, BLUE);
 
     const FOREGROUND_ARGS_DATA: RgbBuffer = Self::FOREGROUND_DATA.args_payload();
     const BACKGROUND_ARGS_DATA: RgbBuffer = Self::BACKGROUND_DATA.args_payload();
@@ -303,21 +248,21 @@ impl<const RED: u8, const GREEN: u8, const BLUE: u8> Rgb<RED, GREEN, BLUE> {
     const DATA: RgbBuffer = Self::FOREGROUND_DATA.raw_args_payload();
 
     /// The ANSI color args
-    pub const ARGS: &'static str = Self::DATA.const_to_str();
+    pub const ARGS: &'static str = Self::DATA.to_str();
 
     /// The ANSI foreground color arguments
-    pub const FOREGROUND_ARGS: &'static str = Self::FOREGROUND_ARGS_DATA.const_to_str();
+    pub const FOREGROUND_ARGS: &'static str = Self::FOREGROUND_ARGS_DATA.to_str();
     /// The ANSI background color arguments
-    pub const BACKGROUND_ARGS: &'static str = Self::BACKGROUND_ARGS_DATA.const_to_str();
+    pub const BACKGROUND_ARGS: &'static str = Self::BACKGROUND_ARGS_DATA.to_str();
     /// The ANSI underline color arguments
-    pub const UNDERLINE_ARGS: &'static str = Self::UNDERLINE_ARGS_DATA.const_to_str();
+    pub const UNDERLINE_ARGS: &'static str = Self::UNDERLINE_ARGS_DATA.to_str();
 
     /// The ANSI foreground color sequence
-    pub const FOREGROUND_ESCAPE: &'static str = Self::FOREGROUND_DATA.const_to_str();
+    pub const FOREGROUND_ESCAPE: &'static str = Self::FOREGROUND_DATA.to_str();
     /// The ANSI background color sequence
-    pub const BACKGROUND_ESCAPE: &'static str = Self::BACKGROUND_DATA.const_to_str();
+    pub const BACKGROUND_ESCAPE: &'static str = Self::BACKGROUND_DATA.to_str();
     /// The ANSI underline color sequence
-    pub const UNDERLINE_ESCAPE: &'static str = Self::UNDERLINE_DATA.const_to_str();
+    pub const UNDERLINE_ESCAPE: &'static str = Self::UNDERLINE_DATA.to_str();
 }
 
 impl<const RED: u8, const GREEN: u8, const BLUE: u8> crate::seal::Seal for Rgb<RED, GREEN, BLUE> {}
